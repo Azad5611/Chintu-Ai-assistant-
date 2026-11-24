@@ -1,0 +1,4607 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>চিন্টু — ব্যক্তিগত এআই সহকারী</title>
+<meta name="description" content="চিন্টু — বাংলা ও ইংরেজি ভয়েস এআই ব্যক্তিগত সহকারী কমান্ড সেন্টার।">
+<meta property="og:title" content="চিন্টু — ব্যক্তিগত এআই সহকারী">
+<meta property="og:description" content="চিন্টু — বাংলা ও ইংরেজি ভয়েস এআই ব্যক্তিগত সহকারী কমান্ড সেন্টার।">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#030b07;
+  --surface:rgba(8,26,17,.78);
+  --surface-strong:rgba(10,33,22,.92);
+  --ink:#e9fff3;
+  --dim:#84b399;
+  --muted:#5c8770;
+  --g:#35ff8c;
+  --g-soft:rgba(53,255,140,.14);
+  --line:rgba(53,255,140,.18);
+  --line-bright:rgba(53,255,140,.42);
+  --warn:#ffb347;
+  --err:#ff6b6b;
+  --err-bg:rgba(255,107,107,.12);
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+body{
+  background:
+    radial-gradient(circle at 50% 30%,rgba(19,86,51,.55) 0%,rgba(6,24,15,.88) 46%,var(--bg) 82%),
+    var(--bg);
+  color:var(--ink);
+  font-family:"Noto Sans Bengali","Outfit",system-ui,sans-serif;
+  display:flex;
+  flex-direction:column;
+  min-height:100dvh;
+  padding:env(safe-area-inset-top,0) 16px env(safe-area-inset-bottom,0);
+  overflow-x:hidden;
+}
+
+.shell{
+  width:100%;
+  max-width:1320px;
+  margin:0 auto;
+  display:flex;
+  flex-direction:column;
+  flex:1;
+  gap:16px;
+  padding:14px 0 24px;
+}
+
+/* Reminder Alert Banner */
+.rem-banner{
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  flex-wrap:wrap;
+  padding:14px 18px;
+  border-radius:14px;
+  background:rgba(43,31,8,.94);
+  border:1px solid var(--warn);
+  box-shadow:0 0 28px rgba(255,179,71,.24);
+}
+.rem-banner.open{display:flex}
+.rem-banner-text{font-size:16px;font-weight:600;color:#fff4dc}
+.rem-banner-sub{font-size:13px;color:var(--warn);margin-top:2px}
+.rem-banner-actions{display:flex;gap:8px;flex-wrap:wrap}
+.rem-banner-actions button{
+  min-height:42px;
+  padding:8px 14px;
+  border-radius:10px;
+  border:1px solid rgba(255,179,71,.45);
+  background:rgba(255,179,71,.14);
+  color:#fff4dc;
+  font:inherit;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.rem-banner-actions .rem-ok{background:var(--warn);color:#231400;border:0}
+
+/* Top Bar */
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  padding:4px 4px 10px;
+  border-bottom:1px solid var(--line);
+}
+.brand-group{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+.brand{
+  font-size:22px;
+  font-weight:700;
+  letter-spacing:.01em;
+  color:var(--ink);
+  white-space:nowrap;
+}
+#clock{
+  font-family:"JetBrains Mono",monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:32px;
+  font-weight:500;
+  letter-spacing:.02em;
+  line-height:1;
+  color:var(--ink);
+}
+#clock small{font-size:16px;color:var(--g)}
+#greet{color:var(--dim);font-size:14px;margin-top:4px}
+.header-right{display:flex;align-items:center;gap:12px;flex-shrink:0}
+.mode-indicator{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-family:"JetBrains Mono","Noto Sans Bengali",monospace;
+  font-size:13px;
+  color:var(--dim);
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:var(--surface);
+  white-space:nowrap;
+}
+.mode-indicator strong{color:var(--g);font-weight:600}
+body[data-s=listening] .mode-indicator strong{color:var(--g)}
+body[data-s=transcribing] .mode-indicator strong{color:#6ce5ff}
+body[data-s=thinking] .mode-indicator strong{color:var(--warn)}
+body[data-s=speaking] .mode-indicator strong{color:#8effc1}
+body[data-s=off] .mode-indicator strong{color:var(--dim)}
+#gear{
+  background:var(--surface);
+  border:1px solid var(--line);
+  color:var(--ink);
+  border-radius:10px;
+  min-width:44px;
+  height:44px;
+  padding:0 12px;
+  font-size:15px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  font-family:inherit;
+  white-space:nowrap;
+  transition:border-color .2s,background-color .2s;
+}
+#gear:hover{border-color:var(--line-bright);background:var(--surface-strong)}
+
+/* Primary Command Grid */
+.command-grid{
+  display:grid;
+  grid-template-columns:minmax(270px,330px) 1fr minmax(270px,330px);
+  grid-template-areas:"tasks stage brain";
+  gap:20px;
+  align-items:stretch;
+}
+.card-tasks{grid-area:tasks}
+.stage-col{
+  grid-area:stage;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-width:0;
+}
+.card-brain{grid-area:brain}
+
+/* Secondary PA Cards Grid */
+.secondary-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:20px;
+  align-items:stretch;
+}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:18px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-height:240px;
+}
+.card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--line);
+}
+.card-title{font-size:15px;font-weight:600;color:var(--ink);margin:0}
+.card-meta{
+  font-family:"JetBrains Mono","Noto Sans Bengali",monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:12px;
+  color:var(--dim);
+}
+.section-divider{
+  border-top:1px solid var(--line);
+  padding-top:10px;
+  margin-top:2px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.sub-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:13px;
+  font-weight:600;
+  color:var(--dim);
+}
+
+/* Forms & Lists */
+.mini-form{display:flex;gap:8px}
+.mini-form input{
+  flex:1;
+  min-width:0;
+  background:rgba(3,11,7,.75);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--ink);
+  padding:9px 12px;
+  font:inherit;
+  font-size:14px;
+  outline:none;
+}
+.mini-form input:focus{border-color:var(--g)}
+.mini-form button,.card-action-btn{
+  background:var(--g-soft);
+  border:1px solid var(--line-bright);
+  color:var(--g);
+  border-radius:10px;
+  padding:0 14px;
+  min-height:40px;
+  font:inherit;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.mini-form button:hover,.card-action-btn:hover{background:rgba(53,255,140,.22)}
+
+.item-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  overflow-y:auto;
+  max-height:190px;
+  flex:1;
+}
+.item-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(3,11,7,.55);
+  border:1px solid rgba(53,255,140,.1);
+}
+.item-row input[type=checkbox]{
+  width:18px;
+  height:18px;
+  accent-color:var(--g);
+  cursor:pointer;
+  flex:none;
+}
+.item-text{
+  flex:1;
+  font-size:14px;
+  line-height:1.4;
+  color:var(--ink);
+  word-break:break-word;
+}
+.item-row.done .item-text{
+  text-decoration:line-through;
+  color:var(--muted);
+}
+.item-sub{
+  font-size:12px;
+  color:var(--dim);
+  margin-top:2px;
+  font-variant-numeric:tabular-nums;
+}
+.item-del{
+  background:none;
+  border:0;
+  color:var(--muted);
+  cursor:pointer;
+  padding:4px 6px;
+  font-size:14px;
+  border-radius:6px;
+  min-width:28px;
+  min-height:28px;
+  flex:none;
+}
+.item-del:hover{color:var(--err);background:var(--err-bg)}
+.empty-msg{
+  color:var(--muted);
+  font-size:13px;
+  line-height:1.5;
+  text-align:center;
+  padding:14px 8px;
+}
+
+/* AI Brain Card */
+.brain-rows{display:flex;flex-direction:column;gap:11px}
+.brain-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-size:13px;
+}
+.brain-label{color:var(--dim)}
+.brain-val{
+  font-family:"JetBrains Mono","Noto Sans Bengali",monospace;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  font-size:13px;
+  text-align:right;
+  max-width:180px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.activity-wrap{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+.activity-head{display:flex;justify-content:space-between;font-size:12px;color:var(--dim)}
+.activity-track{
+  height:10px;
+  border-radius:6px;
+  background:rgba(3,11,7,.85);
+  border:1px solid var(--line);
+  overflow:hidden;
+  position:relative;
+}
+.activity-fill{
+  height:100%;
+  width:22%;
+  border-radius:5px;
+  background:linear-gradient(90deg,#128b49,var(--g));
+  transition:width .35s ease,background-color .3s ease,transform .35s ease;
+}
+body[data-s=off] .activity-fill{width:10%;opacity:.4}
+body[data-s=standby] .activity-fill{width:28%;opacity:.75}
+body[data-s=listening] .activity-fill{width:68%;animation:barPulse 1.1s ease-in-out infinite}
+body[data-s=transcribing] .activity-fill{width:78%;background:linear-gradient(90deg,#1ca8d8,#6ce5ff);animation:barSweep .8s ease-in-out infinite}
+body[data-s=thinking] .activity-fill{width:88%;background:linear-gradient(90deg,#c97b18,var(--warn));animation:barSweep .9s ease-in-out infinite}
+body[data-s=speaking] .activity-fill{width:96%;background:linear-gradient(90deg,#1fdc78,#b8ffd6);animation:barPulse .55s ease-in-out infinite}
+@keyframes barPulse{0%,100%{opacity:.75}50%{opacity:1}}
+@keyframes barSweep{0%,100%{transform:translateX(-8%)}50%{transform:translateX(8%)}}
+.brain-actions{
+  margin-top:auto;
+  display:flex;
+  gap:8px;
+  padding-top:8px;
+}
+.brain-btn{
+  flex:1;
+  min-height:40px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:rgba(3,11,7,.7);
+  color:var(--ink);
+  font:inherit;
+  font-size:13px;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:border-color .2s,background-color .2s;
+}
+.brain-btn:hover{border-color:var(--line-bright);background:rgba(14,44,29,.8)}
+.quota-warn{
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(255,179,71,.14);
+  border:1px solid rgba(255,179,71,.55);
+  color:#ffe2b3;
+  font-size:11.5px;
+  line-height:1.45;
+}
+
+/* Weather Card */
+.weather-main{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap:12px;
+}
+.weather-temp{
+  font-family:"JetBrains Mono",monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:34px;
+  font-weight:600;
+  color:var(--ink);
+}
+.weather-cond{font-size:14px;color:var(--g);font-weight:500}
+.weather-stats{
+  display:flex;
+  gap:14px;
+  font-size:12px;
+  color:var(--dim);
+  font-variant-numeric:tabular-nums;
+}
+.forecast-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+  margin-top:auto;
+  padding-top:10px;
+  border-top:1px solid var(--line);
+}
+.fc-day{
+  background:rgba(3,11,7,.55);
+  border:1px solid rgba(53,255,140,.1);
+  border-radius:10px;
+  padding:8px;
+  text-align:center;
+  font-size:12px;
+}
+.fc-date{color:var(--dim);font-variant-numeric:tabular-nums}
+.fc-temps{
+  font-family:"JetBrains Mono",monospace;
+  font-variant-numeric:tabular-nums;
+  color:var(--ink);
+  margin:4px 0 2px;
+  font-weight:600;
+}
+.fc-cond{color:var(--muted);font-size:11px;line-height:1.3}
+
+/* Daily Report Card */
+.report-stats{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:8px;
+}
+.rep-stat{
+  background:rgba(3,11,7,.55);
+  border:1px solid rgba(53,255,140,.1);
+  border-radius:10px;
+  padding:10px 8px;
+  text-align:center;
+}
+.rep-num{
+  font-family:"JetBrains Mono",monospace;
+  font-variant-numeric:tabular-nums;
+  font-size:20px;
+  font-weight:600;
+  color:var(--g);
+}
+.rep-lbl{font-size:12px;color:var(--dim);margin-top:2px}
+.report-summary{
+  font-size:14px;
+  line-height:1.55;
+  color:var(--ink);
+  margin:0;
+}
+.comm-summary-line{
+  padding:8px 10px;
+  border-radius:10px;
+  background:rgba(53,255,140,.08);
+  border:1px solid var(--line);
+  color:var(--g);
+  font-size:13px;
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+}
+
+/* Contacts Card & Safety Action Confirmation Card */
+.ct-form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.ct-form-grid input{
+  min-width:0;
+  background:rgba(3,11,7,.75);
+  border:1px solid var(--line);
+  border-radius:10px;
+  color:var(--ink);
+  padding:8px 11px;
+  font:inherit;
+  font-size:13.5px;
+  outline:none;
+}
+.ct-form-grid input:focus{border-color:var(--g)}
+.ct-span-2{grid-column:span 2}
+.ct-picker-note{
+  font-size:12px;
+  line-height:1.45;
+  color:var(--warn);
+  background:rgba(255,179,71,.12);
+  border:1px solid rgba(255,179,71,.4);
+  border-radius:9px;
+  padding:7px 10px;
+}
+.ct-actions{
+  display:flex;
+  gap:4px;
+  flex:none;
+  align-items:center;
+}
+.ct-mini-btn{
+  background:rgba(53,255,140,.1);
+  border:1px solid var(--line);
+  color:var(--g);
+  border-radius:7px;
+  min-width:30px;
+  min-height:30px;
+  padding:0 7px;
+  font:inherit;
+  font-size:13px;
+  cursor:pointer;
+}
+.ct-mini-btn:hover{background:rgba(53,255,140,.22);border-color:var(--g)}
+.action-card{
+  display:none;
+  width:100%;
+  background:var(--surface-strong);
+  border:1px solid var(--line-bright);
+  border-radius:16px;
+  padding:14px 16px;
+  gap:10px;
+  box-shadow:0 0 28px rgba(53,255,140,.16);
+}
+.action-card.open{display:flex;flex-direction:column}
+.action-card-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.action-card-title{font-size:15px;font-weight:700;color:var(--ink)}
+.action-card-badge{
+  font-size:12px;
+  padding:3px 9px;
+  border-radius:8px;
+  background:var(--g-soft);
+  border:1px solid var(--line);
+  color:var(--g);
+  font-variant-numeric:tabular-nums;
+}
+.action-card-sub{font-size:13px;color:var(--dim);line-height:1.45}
+.action-draft{
+  width:100%;
+  min-height:74px;
+  resize:vertical;
+  background:rgba(3,11,7,.88);
+  border:1px solid var(--line);
+  border-radius:11px;
+  color:var(--ink);
+  padding:10px 12px;
+  font:inherit;
+  font-size:15px;
+  line-height:1.5;
+  outline:none;
+}
+.action-draft:focus{border-color:var(--g)}
+.action-choices{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.action-choice-btn{
+  min-height:40px;
+  padding:7px 12px;
+  border-radius:10px;
+  border:1px solid var(--line-bright);
+  background:var(--g-soft);
+  color:var(--ink);
+  font:inherit;
+  font-size:13.5px;
+  cursor:pointer;
+}
+.action-choice-btn:hover{background:rgba(53,255,140,.24)}
+.action-btns{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.btn-confirm{
+  flex:1;
+  min-height:46px;
+  padding:10px 16px;
+  border-radius:12px;
+  border:0;
+  background:var(--g);
+  color:#032413;
+  font:inherit;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+}
+.btn-cancel{
+  min-height:46px;
+  padding:10px 16px;
+  border-radius:12px;
+  border:1px solid rgba(255,107,107,.45);
+  background:var(--err-bg);
+  color:#ffd4d4;
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+}
+.big-exec-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  flex:1;
+  min-height:56px;
+  padding:12px 20px;
+  border-radius:14px;
+  background:var(--g);
+  color:#032413;
+  text-decoration:none;
+  font-size:17px;
+  font-weight:700;
+  box-shadow:0 0 26px rgba(53,255,140,.34);
+}
+.big-exec-btn:hover{filter:brightness(1.06)}
+
+/* Central Plasma Sphere + 8 Nodes */
+.stage{
+  position:relative;
+  width:min(88vw,400px);
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#lines-svg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  pointer-events:none;
+}
+.conn-line{
+  stroke:rgba(53,255,140,.28);
+  stroke-width:1.4;
+  stroke-dasharray:4 4;
+  transition:stroke .35s,stroke-width .35s;
+}
+body[data-s=listening] .conn-line{stroke:rgba(53,255,140,.52)}
+body[data-s=transcribing] .conn-line{stroke:rgba(108,229,255,.58);stroke-width:1.7}
+body[data-s=thinking] .conn-line{stroke:rgba(255,179,71,.58);stroke-width:1.8}
+body[data-s=speaking] .conn-line{stroke:rgba(130,255,184,.72);stroke-width:2}
+
+.conn-dot{
+  fill:rgba(120,255,180,.78);
+  transition:fill .35s;
+}
+body[data-s=listening] .conn-dot{fill:var(--g)}
+body[data-s=transcribing] .conn-dot{fill:#6ce5ff}
+body[data-s=thinking] .conn-dot{fill:var(--warn)}
+body[data-s=speaking] .conn-dot{fill:#b8ffd6}
+
+.orb-frame{
+  position:relative;
+  width:56%;
+  aspect-ratio:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+#plasma{
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+.node{
+  position:absolute;
+  transform:translate(-50%,-50%);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  width:76px;
+  min-height:54px;
+  padding:6px 5px;
+  background:var(--surface-strong);
+  border:1px solid var(--line);
+  border-radius:12px;
+  color:var(--ink);
+  font:inherit;
+  font-size:11px;
+  font-weight:500;
+  cursor:pointer;
+  transition:border-color .2s,transform .2s,background-color .2s;
+  z-index:2;
+}
+.node:hover{
+  border-color:var(--g);
+  background:rgba(14,48,30,.96);
+  transform:translate(-50%,-50%) scale(1.06);
+}
+.node svg{width:17px;height:17px;stroke:var(--g);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.node span{white-space:nowrap}
+
+/* Subtitles, Errors & Bottom Command Dock */
+.dock{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
+  width:100%;
+  max-width:860px;
+  margin:0 auto;
+}
+#status{
+  font-size:14px;
+  font-weight:500;
+  color:var(--g);
+  text-align:center;
+  min-height:22px;
+  padding:4px 12px;
+  border-radius:8px;
+}
+#status.err{
+  color:#ffd4d4;
+  background:var(--err-bg);
+  border:1px solid rgba(255,107,107,.45);
+  padding:8px 14px;
+}
+#you{
+  color:var(--dim);
+  font-size:14px;
+  min-height:20px;
+  text-align:center;
+  max-width:92%;
+}
+#sub{
+  margin:0;
+  min-height:64px;
+  max-height:22vh;
+  overflow-y:auto;
+  text-align:center;
+  font-size:clamp(20px,2.4vw,27px);
+  font-weight:500;
+  line-height:1.5;
+  color:var(--ink);
+  max-width:100%;
+  padding:4px 12px;
+  text-wrap:balance;
+}
+.controls{
+  width:100%;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+#mic{
+  min-height:52px;
+  padding:12px 22px;
+  border-radius:14px;
+  border:0;
+  background:var(--g);
+  color:#032413;
+  font:inherit;
+  font-size:15px;
+  font-weight:700;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  white-space:nowrap;
+  flex:none;
+  transition:transform .15s,background-color .2s,box-shadow .2s;
+  box-shadow:0 0 24px rgba(53,255,140,.25);
+}
+#mic:hover{transform:translateY(-1px);box-shadow:0 0 32px rgba(53,255,140,.4)}
+#mic.active{background:#19c968;color:#021d0e}
+body[data-s=listening] #mic.active{background:var(--g);box-shadow:0 0 28px rgba(53,255,140,.45)}
+body[data-s=thinking] #mic.active{background:var(--warn);color:#231400}
+
+.text-fallback{
+  flex:1;
+  min-width:220px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+#txt{
+  flex:1;
+  min-width:0;
+  min-height:52px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:14px;
+  color:var(--ink);
+  padding:12px 16px;
+  font:inherit;
+  font-size:15px;
+  outline:none;
+}
+#txt:focus{border-color:var(--g)}
+#send-btn{
+  min-height:52px;
+  padding:0 18px;
+  border-radius:14px;
+  border:1px solid var(--line-bright);
+  background:var(--g-soft);
+  color:var(--g);
+  font:inherit;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+}
+#send-btn:hover{background:rgba(53,255,140,.24)}
+
+button:focus-visible,input:focus-visible,select:focus-visible{
+  outline:2px solid #fff;
+  outline-offset:2px;
+}
+
+/* Settings Modal */
+dialog{
+  background:#081c12;
+  color:var(--ink);
+  border:1px solid var(--line-bright);
+  border-radius:16px;
+  width:min(94vw,460px);
+  max-height:90dvh;
+  overflow-y:auto;
+  padding:22px;
+}
+dialog::backdrop{background:rgba(0,0,0,.72)}
+dialog h3{margin:0 0 8px;font-size:18px}
+label{display:block;margin:14px 0 6px;color:var(--dim);font-size:13px}
+dialog input,dialog select{
+  width:100%;
+  background:#030b07;
+  color:var(--ink);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:11px 12px;
+  font:inherit;
+  font-size:14px;
+}
+.model-list{
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.model-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:7px 10px;
+  border-radius:10px;
+  background:#030b07;
+  border:1px solid var(--line);
+}
+.model-rank{
+  font-family:"JetBrains Mono",monospace;
+  font-size:12px;
+  color:var(--g);
+  min-width:18px;
+}
+.model-name{
+  flex:1;
+  font-family:"JetBrains Mono",monospace;
+  font-size:12px;
+  color:var(--ink);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.model-btns{display:flex;gap:4px;flex:none}
+.model-btns button{
+  min-width:28px;
+  height:28px;
+  padding:0 6px;
+  border-radius:7px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink);
+  font:inherit;
+  font-size:12px;
+  cursor:pointer;
+}
+.model-btns button:hover:not(:disabled){border-color:var(--g);color:var(--g)}
+.model-btns button:disabled{opacity:.32;cursor:not-allowed}
+.model-add-row{
+  display:flex;
+  gap:6px;
+  margin-top:8px;
+}
+.model-add-row input{flex:1;min-width:0;padding:8px 10px;font-size:13px}
+.model-add-row button{
+  padding:0 12px;
+  min-height:36px;
+  border-radius:9px;
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--ink);
+  font:inherit;
+  font-size:12px;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.model-add-row button:hover{border-color:var(--g);color:var(--g)}
+.lang-note{
+  margin-top:8px;
+  padding:8px 10px;
+  border-radius:9px;
+  font-size:12px;
+  line-height:1.45;
+  color:var(--dim);
+  background:rgba(53,255,140,.06);
+  border:1px solid var(--line);
+}
+.lang-warn{
+  margin-top:8px;
+  padding:9px 11px;
+  border-radius:9px;
+  font-size:12px;
+  line-height:1.5;
+  color:#ffe2b3;
+  background:rgba(255,179,71,.14);
+  border:1px solid rgba(255,179,71,.5);
+}
+.row{display:flex;gap:10px;margin-top:20px}
+.row button{
+  flex:1;
+  min-height:44px;
+  padding:10px 14px;
+  border-radius:10px;
+  border:1px solid var(--line);
+  background:none;
+  color:var(--ink);
+  font:inherit;
+  font-size:14px;
+  cursor:pointer;
+}
+.row .pri{background:var(--g);color:#032413;border:0;font-weight:700}
+.diag-list{
+  list-style:none;
+  margin:10px 0 0;
+  padding:8px;
+  max-height:48vh;
+  overflow-y:auto;
+  border-radius:10px;
+  background:#030b07;
+  border:1px solid var(--line);
+  font-family:"JetBrains Mono","Noto Sans Bengali",monospace;
+  font-size:11px;
+  line-height:1.5;
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.diag-row{word-break:break-word;color:var(--dim)}
+.diag-row.ok{color:#8effc1}
+.diag-row.warn{color:var(--warn)}
+.diag-row.err{color:#ff9b9b}
+.diag-ts{color:var(--muted);margin-right:6px}
+.diag-tag{color:var(--g);font-weight:600;margin-right:6px}
+
+@media (max-width:1024px){
+  .command-grid{
+    grid-template-columns:1fr;
+    grid-template-areas:
+      "stage"
+      "tasks"
+      "brain";
+    gap:16px;
+  }
+  .secondary-grid{
+    grid-template-columns:1fr;
+    gap:16px;
+  }
+  .card{min-height:auto}
+  .stage{width:min(90vw,350px)}
+  .node{width:66px;min-height:48px;font-size:10px;padding:5px 4px}
+  .controls{flex-direction:column;align-items:stretch}
+  #mic{width:100%}
+  .text-fallback{width:100%}
+  #clock{font-size:26px}
+}
+@media (prefers-reduced-motion:reduce){
+  .activity-fill{animation:none!important}
+}
+</style>
+</head>
+<body data-s="off">
+<div class="shell">
+  <!-- Active Reminder Alert Banner -->
+  <div class="rem-banner" id="rem-banner" role="alert">
+    <div>
+      <div class="rem-banner-text" id="rem-banner-text">রিমাইন্ডার</div>
+      <div class="rem-banner-sub" id="rem-banner-sub">এখনকার রিমাইন্ডার</div>
+    </div>
+    <div class="rem-banner-actions">
+      <button type="button" id="rem-snooze">১০ মিনিট পর আবার বলো</button>
+      <button type="button" class="rem-ok" id="rem-dismiss">ঠিক আছে</button>
+    </div>
+  </div>
+
+  <header>
+    <div>
+      <div class="brand-group">
+        <span class="brand">চিন্টু</span>
+        <div id="clock">00:00<small>:00</small></div>
+      </div>
+      <div id="greet"></div>
+    </div>
+    <div class="header-right">
+      <div class="mode-indicator" aria-live="polite">
+        অবস্থা: <strong id="mode-pill">Standby</strong>
+      </div>
+      <button id="gear" aria-label="সেটিংস">⚙ সেটিংস</button>
+    </div>
+  </header>
+
+  <main class="command-grid">
+    <!-- Left Card: Today's Tasks & Reminders -->
+    <section class="card card-tasks" aria-label="আজকের কাজ ও রিমাইন্ডার">
+      <div class="card-head">
+        <h2 class="card-title">আজকের কাজ</h2>
+        <span class="card-meta" id="task-count">0/0</span>
+      </div>
+      <form class="mini-form" id="task-form">
+        <input id="task-input" placeholder="নতুন কাজ লিখুন…" autocomplete="off">
+        <button type="submit">যোগ</button>
+      </form>
+      <ul class="item-list" id="task-list"></ul>
+
+      <div class="section-divider">
+        <div class="sub-head">
+          <span>রিমাইন্ডার</span>
+          <span class="card-meta" id="rem-count">0</span>
+        </div>
+        <ul class="item-list" id="rem-list" style="max-height:120px"></ul>
+      </div>
+    </section>
+
+    <!-- Center: Living Green Plasma Brain + 8 Tool Nodes -->
+    <section class="stage-col" aria-label="চিন্টু কোর">
+      <div class="stage" id="stage">
+        <svg id="lines-svg" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <div class="orb-frame">
+          <canvas id="plasma" width="320" height="320" aria-label="চিন্টু প্লাজমা ব্রেইন"></canvas>
+        </div>
+        <button type="button" class="node" data-tool="ইমেইল" data-prompt="আমার ইমেইলগুলো কীভাবে সাজাবো?">
+          <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+          <span>ইমেইল</span>
+        </button>
+        <button type="button" class="node" data-tool="ক্যালেন্ডার" data-prompt="আজকের কাজ আর রিমাইন্ডার অনুযায়ী আমার সময়সূচী বলো।">
+          <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+          <span>ক্যালেন্ডার</span>
+        </button>
+        <button type="button" class="node" data-tool="আবহাওয়া" data-prompt="আজকের আবহাওয়া কেমন?">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <span>আবহাওয়া</span>
+        </button>
+        <button type="button" class="node" data-tool="কল" data-prompt="আমাকে একটা জরুরি কল করতে হবে, মনে রেখো।">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span>কল</span>
+        </button>
+        <button type="button" class="node" data-tool="হোয়াটসঅ্যাপ" data-prompt="হোয়াটসঅ্যাপে একটা বার্তা পাঠাতে চাই।">
+          <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+          <span>হোয়াটসঅ্যাপ</span>
+        </button>
+        <button type="button" class="node" data-tool="ফেসবুক" data-prompt="ফেসবুকে একটি পোস্ট করতে চাই।">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span>ফেসবুক</span>
+        </button>
+        <button type="button" class="node" data-tool="কাজ" data-action="focus-tasks">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          <span>কাজ</span>
+        </button>
+        <button type="button" class="node" data-tool="স্মৃতি" data-action="focus-memory">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/></svg>
+          <span>স্মৃতি</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Right Card: AI Brain -->
+    <aside class="card card-brain" aria-label="AI Brain">
+      <div class="card-head">
+        <h2 class="card-title">AI Brain</h2>
+        <span class="card-meta" id="brain-state-label">Standby</span>
+      </div>
+      <div class="brain-rows">
+        <div class="brain-row">
+          <span class="brain-label">মডেল</span>
+          <span class="brain-val" id="brain-model">gemini-4-hydrogen</span>
+        </div>
+        <div class="brain-row">
+          <span class="brain-label">ভয়েস ভাষা</span>
+          <span class="brain-val" id="brain-lang">বাংলা (bn-BD)</span>
+        </div>
+        <div class="brain-row">
+          <span class="brain-label">কথোপকথন</span>
+          <span class="brain-val" id="brain-turns">0 বার্তা</span>
+        </div>
+        <div class="brain-row">
+          <span class="brain-label" id="brain-requests">আজকের অনুরোধ: 0</span>
+          <span class="brain-val" id="brain-req-sub">চ্যাট: 0 · ভয়েস: 0 · শোনা: 0</span>
+        </div>
+        <div class="brain-row">
+          <span class="brain-label">৭ দিনের স্মৃতি</span>
+          <span class="brain-val" id="brain-activity-count">0 ঘটনা</span>
+        </div>
+      </div>
+      <div class="quota-warn" id="quota-warn" style="display:none" role="status"></div>
+      <div class="activity-wrap">
+        <div class="activity-head">
+          <span>লাইভ অ্যাক্টিভিটি</span>
+          <span id="activity-pct">Standby</span>
+        </div>
+        <div class="activity-track" aria-hidden="true">
+          <div class="activity-fill" id="brain-bar"></div>
+        </div>
+      </div>
+      <div class="brain-actions">
+        <button type="button" class="brain-btn" id="quick-lang">ভাষা: বাংলা</button>
+        <button type="button" class="brain-btn" id="open-logs">ভয়েস লগ</button>
+        <button type="button" class="brain-btn" id="quick-clear">মুছুন</button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Large Subtitles, Errors & Activation / Fallback Input -->
+  <section class="dock" aria-label="কথোপকথন নিয়ন্ত্রণ">
+    <div id="status">অপেক্ষায় — Activate Chintu চাপুন অথবা নিচে লিখুন</div>
+    <div id="you"></div>
+    <p id="sub">হ্যালো স্যার! কথা বলতে "Activate Chintu" চাপুন, অথবা নিচে লিখুন।</p>
+    <div class="action-card" id="action-card" role="region" aria-label="কল ও মেসেজ নিশ্চিতকরণ"></div>
+    <div class="controls">
+      <button id="mic" type="button" aria-label="Activate Chintu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+        <span id="mic-label">Activate Chintu</span>
+      </button>
+      <div class="text-fallback">
+        <input id="txt" placeholder="এখানে লিখুন (ফলব্যাক)…" autocomplete="off">
+        <button id="send-btn" type="button">পাঠান</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Secondary PA Cards: Memory, Contacts, Weather, Daily Report -->
+  <section class="secondary-grid" aria-label="স্মৃতি, কন্টাক্ট, আবহাওয়া এবং দৈনিক রিপোর্ট">
+    <!-- স্মৃতি Card -->
+    <article class="card" id="memory-card" aria-label="স্মৃতি">
+      <div class="card-head">
+        <h2 class="card-title">স্মৃতি</h2>
+        <span class="card-meta" id="fact-count">0 তথ্য</span>
+      </div>
+      <form class="mini-form" id="fact-form">
+        <input id="fact-input" placeholder="ব্যক্তিগত তথ্য যোগ করুন…" autocomplete="off">
+        <button type="submit">রাখুন</button>
+      </form>
+      <ul class="item-list" id="fact-list"></ul>
+    </article>
+
+    <!-- কন্টাক্ট Card -->
+    <article class="card" id="contacts-card" aria-label="কন্টাক্ট">
+      <div class="card-head">
+        <h2 class="card-title">কন্টাক্ট</h2>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <button type="button" class="card-action-btn" id="pick-contacts-btn" style="min-height:32px;padding:0 10px;font-size:12px">ফোনবুক থেকে বেছে নিন</button>
+          <span class="card-meta" id="contact-count">0 জন</span>
+        </div>
+      </div>
+      <form class="ct-form-grid" id="contact-form">
+        <input id="ct-name" placeholder="নাম (যেমন: রহিম)" autocomplete="off" required>
+        <input id="ct-phone" placeholder="নম্বর (01712345678)" inputmode="tel" autocomplete="off" required>
+        <input id="ct-nick" placeholder="ডাকনাম (যেমন: আম্মু, Ammu, Mom)" autocomplete="off">
+        <button type="submit" class="card-action-btn">সেভ করুন</button>
+      </form>
+      <div id="picker-note" class="ct-picker-note" style="display:none"></div>
+      <ul class="item-list" id="contact-list"></ul>
+    </article>
+
+    <!-- আবহাওয়া Card -->
+    <article class="card" id="weather-card" aria-label="আবহাওয়া">
+      <div class="card-head">
+        <h2 class="card-title">আবহাওয়া · <span id="weather-city">Dhaka</span></h2>
+        <button type="button" class="card-action-btn" id="weather-refresh" style="min-height:32px;padding:0 10px;font-size:12px">রিফ্রেশ</button>
+      </div>
+      <div id="weather-body">
+        <div class="empty-msg">আবহাওয়ার তথ্য লোড হচ্ছে…</div>
+      </div>
+    </article>
+
+    <!-- দৈনিক রিপোর্ট Card -->
+    <article class="card" id="report-card" aria-label="দৈনিক রিপোর্ট">
+      <div class="card-head">
+        <h2 class="card-title">দৈনিক রিপোর্ট</h2>
+        <button type="button" class="card-action-btn" id="report-btn" style="min-height:32px;padding:0 10px;font-size:12px">রিপোর্ট দাও</button>
+      </div>
+      <div class="report-stats">
+        <div class="rep-stat">
+          <div class="rep-num" id="rep-done">0</div>
+          <div class="rep-lbl">সম্পন্ন</div>
+        </div>
+        <div class="rep-stat">
+          <div class="rep-num" id="rep-pending">0</div>
+          <div class="rep-lbl">বাকি কাজ</div>
+        </div>
+        <div class="rep-stat">
+          <div class="rep-num" id="rep-rems">0</div>
+          <div class="rep-lbl">রিমাইন্ডার</div>
+        </div>
+      </div>
+      <div class="comm-summary-line" id="rep-comm-summary">আজ ০টা কল, ০টা মেসেজ</div>
+      <p class="report-summary" id="report-summary">রাত ৯টার পর বা "আজকের রিপোর্ট দাও" বললে চিন্টু আপনার আজকের সারসংক্ষেপ দেবে, স্যার।</p>
+      <ul class="item-list" id="comm-log-list" style="max-height:92px"></ul>
+    </article>
+  </section>
+</div>
+
+<dialog id="dlg">
+  <h3>সেটিংস</h3>
+  <label for="city">শহর (আবহাওয়ার জন্য)</label>
+  <input id="city" placeholder="Dhaka">
+  <label>Gemini মডেল তালিকা (৪২৯ কোটা শেষ হলে পরের মডেলে যাবে)</label>
+  <ul class="model-list" id="model-list"></ul>
+  <div class="model-add-row">
+    <input id="new-model" placeholder="মডেল যোগ করুন (যেমন gemini-3.1-flash-lite)">
+    <button type="button" id="add-model-btn">যোগ</button>
+    <button type="button" id="reset-models-btn">ডিফল্ট</button>
+  </div>
+  <label for="l">ভয়েস ভাষা (Speech Recognition)</label>
+  <select id="l">
+    <option value="bn-BD">বাংলা (bn-BD) — ফ্রি ব্রাউজার</option>
+    <option value="en-US">English (en-US) — Free Browser</option>
+    <option value="auto">Auto (বাংলা + English · Gemini Audio)</option>
+  </select>
+  <div id="lang-warn" class="lang-note"></div>
+  <label for="tts-mode">চিন্টুর কণ্ঠস্বর (Voice Output)</label>
+  <select id="tts-mode">
+    <option value="gemini">Cute Magical Voice (Gemini TTS · কার্টুন কণ্ঠ)</option>
+    <option value="browser">ফ্রি ব্রাউজার কণ্ঠ (Browser TTS · কোটা ছাড়া)</option>
+  </select>
+  <label for="quota-limit">দৈনিক ফ্রি কোটা সীমা (৮০% হলে সতর্কতা + ফ্রি ভয়েস)</label>
+  <input id="quota-limit" type="number" min="10" max="5000" placeholder="100">
+  <div class="row">
+    <button type="button" id="clr">কথোপকথন মুছুন</button>
+    <button type="button" id="sv" class="pri">সংরক্ষণ</button>
+  </div>
+</dialog>
+
+<dialog id="log-dlg">
+  <h3>ভয়েস ও নেটওয়ার্ক ডায়াগনস্টিক লগ</h3>
+  <div style="font-size:12px;color:var(--dim)" id="diag-summary">মাইক, পারমিশন, STT ও AI অনুরোধের আসল ইভেন্ট লগ</div>
+  <ul class="diag-list" id="diag-list"></ul>
+  <div class="row">
+    <button type="button" id="copy-logs">কপি করুন</button>
+    <button type="button" id="clear-logs">পরিষ্কার</button>
+    <button type="button" id="close-logs" class="pri">বন্ধ</button>
+  </div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const $$=s=>Array.from(document.querySelectorAll(s));
+const ls={
+  get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}},
+  remove:k=>{try{localStorage.removeItem(k)}catch(e){}}
+};
+
+const DEFAULT_MODELS=[
+  'gemini-3.1-flash-lite',
+  'gemini-4-hydrogen',
+  'gemini-3.8-flash',
+  'gemini-3-flash-preview'
+];
+const DEPRECATED_MODELS=new Set([
+  'gemini-1.5-flash','gemini-1.5-pro','gemini-pro',
+  'gemini-2.0-flash','gemini-2.0-pro','gemini-2.0-flash-thinking','gemini-2.5-flash'
+]);
+const WEATHER_CACHE_MS=30*60*1000;
+
+/* Dedicated Device TimeService (System Clock & Local Timezone — Independent of Cloud AI) */
+const TimeService=(()=>{
+  const BN_DIGITS=['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
+  const BN_HOUR_WORDS={1:'একটা',2:'দুইটা',3:'তিনটা',4:'চারটা',5:'পাঁচটা',6:'ছয়টা',7:'সাতটা',8:'আটটা',9:'নয়টা',10:'দশটা',11:'এগারোটা',12:'বারোটা'};
+  const toBn=v=>String(v).replace(/\d/g,d=>BN_DIGITS[Number(d)]??d);
+  function getSystemTimeZone(){
+    try{
+      const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if(tz&&typeof tz==='string'&&tz.trim())return tz.trim();
+    }catch(e){}
+    return 'UTC';
+  }
+  function resolveValidTimeZone(tzOverride){
+    const cand=(typeof tzOverride==='string'&&tzOverride.trim())?tzOverride.trim():getSystemTimeZone();
+    try{new Intl.DateTimeFormat('en-US',{timeZone:cand}).format(new Date());return cand}catch(e){return getSystemTimeZone()}
+  }
+  function getOffsetStr(date,timeZone){
+    try{
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone,timeZoneName:'shortOffset',hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(date);
+      const tzPart=(parts.find(p=>p.type==='timeZoneName')||{}).value||'';
+      const m=tzPart.match(/^GMT([+-])(\d{1,2})(?::?(\d{2}))?$/);
+      if(m)return m[1]+m[2].padStart(2,'0')+':'+(m[3]||'00').padStart(2,'0');
+      if(tzPart==='GMT'||tzPart==='UTC')return '+00:00';
+    }catch(e){}
+    const off=-date.getTimezoneOffset();
+    const s=off>=0?'+':'-';
+    const a=Math.abs(off);
+    return s+String(Math.floor(a/60)).padStart(2,'0')+':'+String(a%60).padStart(2,'0');
+  }
+  function getPeriodForHour(h){
+    if(h>=5&&h<=11)return {periodKey:'morning',periodBn:'সকাল',spokenPeriodBn:'সকাল',dayNightBn:'দিন',greetingBn:'শুভ সকাল',greetingEn:'Good morning'};
+    if(h>=12&&h<=15)return {periodKey:'noon',periodBn:'দুপুর',spokenPeriodBn:'দুপুর',dayNightBn:'দিন',greetingBn:'শুভ দুপুর',greetingEn:'Good afternoon'};
+    if(h>=16&&h<=17)return {periodKey:'afternoon',periodBn:'বিকেল',spokenPeriodBn:'বিকেল',dayNightBn:'দিন',greetingBn:'শুভ বিকেল',greetingEn:'Good afternoon'};
+    if(h>=18&&h<=23)return {periodKey:'night',periodBn:'রাত',spokenPeriodBn:'রাত',dayNightBn:'রাত',greetingBn:'শুভ সন্ধ্যা',greetingEn:'Good evening'};
+    return {periodKey:'late_night',periodBn:'গভীর রাত',spokenPeriodBn:'রাত',dayNightBn:'রাত',greetingBn:'শুভ রাত্রি',greetingEn:'Good night'};
+  }
+  function getSnapshot(nowInput,tzOverride){
+    const now=nowInput instanceof Date?nowInput:new Date();
+    const timeZone=resolveValidTimeZone(tzOverride);
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}).formatToParts(now);
+    const map={};
+    for(const p of parts){if(p.type!=='literal')map[p.type]=Number(p.value)}
+    const year=map.year||now.getFullYear();
+    const month=map.month||(now.getMonth()+1);
+    const day=map.day||now.getDate();
+    const rawHour=Number.isFinite(map.hour)?map.hour:now.getHours();
+    const hour24=rawHour===24?0:rawHour;
+    const minute=Number.isFinite(map.minute)?map.minute:now.getMinutes();
+    const second=Number.isFinite(map.second)?map.second:now.getSeconds();
+    const ampm=hour24>=12?'PM':'AM';
+    const hour12=hour24%12===0?12:hour24%12;
+    const pad2=n=>String(n).padStart(2,'0');
+    const formatted24h=pad2(hour24)+':'+pad2(minute);
+    const formatted24hWithSec=formatted24h+':'+pad2(second);
+    const formatted12hEn=hour12+':'+pad2(minute)+' '+ampm;
+    const localIsoWithOffset=year+'-'+pad2(month)+'-'+pad2(day)+'T'+formatted24hWithSec+getOffsetStr(now,timeZone);
+    const period=getPeriodForHour(hour24);
+    const hw=BN_HOUR_WORDS[hour12]||(toBn(hour12)+'টা');
+    const spokenTimeBn=minute===0
+      ?('এখন '+period.spokenPeriodBn+' '+hw+' বাজে')
+      :('এখন '+period.spokenPeriodBn+' '+hw+' বেজে '+toBn(minute)+' মিনিট');
+    const spokenTimeEn='It is '+formatted12hEn+' right now';
+    return {
+      epochMs:now.getTime(),timeZone,year,month,day,hour24,minute,second,hour12,ampm,
+      formatted24h,formatted24hWithSec,formatted12hEn,localIsoWithOffset,
+      periodKey:period.periodKey,periodBn:period.periodBn,spokenPeriodBn:period.spokenPeriodBn,
+      dayNightBn:period.dayNightBn,greetingBn:period.greetingBn,greetingEn:period.greetingEn,
+      spokenTimeBn,spokenTimeEn,toBn
+    };
+  }
+  function isEnAsk(t){
+    if(!/[a-z]/i.test(t)||/[\u0980-\u09FF]/.test(t))return false;
+    if(/\b(ekhon|akn|koyta|kota|baje|somoy|din|naki|rat|dupur|sokal|bikel|ki|koto)\b/i.test(t))return false;
+    return true;
+  }
+  function answerQueryLocally(rawInput,nowInput,tzOverride){
+    const snapshot=getSnapshot(nowInput,tzOverride);
+    const text=String(rawInput||'').normalize('NFC').trim();
+    const lower=text.toLowerCase();
+    if(!text)return {handled:false,reply:'',snapshot};
+    if(/(মনে কর|রিমাইন্ডার|কাজ|টাস্ক|আবহাওয়া|বৃষ্টি|তাপমাত্রা|রিপোর্ট|কল|হোয়াটসঅ্যাপ|মেসেজ|remind|alarm|task|weather|report|call|whatsapp|message|tomorrow|আগামীকাল|গতকাল)/i.test(lower)){
+      return {handled:false,reply:'',snapshot};
+    }
+    const enMode=isEnAsk(lower);
+    if(/^(?:(?:hey|hi|hello)\s+chintu[\s,!]*)?(?:এখন\s*)?(?:কি\s*)?(?:দিন\s*(?:না|নাকি|বা)\s*রাত|রাত\s*(?:না|নাকি|বা)\s*দিন|ekhon\s*(?:ki\s*)?(?:din\s*naki\s*rat|rat\s*naki\s*din)|is\s+it\s+(?:day|daytime|night|nighttime)(?:\s+or\s+(?:day|night))?)[?!.\s]*$/i.test(lower)){
+      const reply=enMode
+        ?('It is '+(snapshot.dayNightBn==='রাত'?'night':'daytime')+' right now, Sir ('+snapshot.formatted12hEn+').')
+        :('এখন '+snapshot.dayNightBn+', স্যার — '+snapshot.spokenTimeBn+' ('+snapshot.periodBn+')।');
+      return {handled:true,queryType:'day_night',reply,snapshot};
+    }
+    const checks=[
+      {re:/(?:এখন\s*কি\s*সকাল|ekhon\s*ki\s*(?:sokal|shokal)|is\s+it\s+morning)/i,fn:p=>p==='morning',bn:'সকাল',en:'morning'},
+      {re:/(?:এখন\s*কি\s*দুপুর|ekhon\s*ki\s*dupur|is\s+it\s+(?:noon|midday))/i,fn:p=>p==='noon',bn:'দুপুর',en:'noon'},
+      {re:/(?:এখন\s*কি\s*(?:বিকেল|বিকাল)|ekhon\s*ki\s*(?:bikel|bikal)|is\s+it\s+afternoon)/i,fn:p=>p==='afternoon',bn:'বিকেল',en:'afternoon'},
+      {re:/(?:এখন\s*কি\s*(?:সন্ধ্যা|সন্ধ্যে)|ekhon\s*ki\s*(?:sondha|shondha)|is\s+it\s+evening)/i,fn:p=>p==='night'&&snapshot.hour24>=18&&snapshot.hour24<20,bn:'সন্ধ্যা',en:'evening'},
+      {re:/(?:এখন\s*কি\s*(?:গভীর\s*)?রাত|ekhon\s*ki\s*(?:gobhir\s*)?(?:rat|raat)|is\s+it\s+night)/i,fn:p=>p==='night'||p==='late_night',bn:'রাত',en:'night'}
+    ];
+    for(const c of checks){
+      if(c.re.test(lower)&&text.length<=60){
+        const yes=c.fn(snapshot.periodKey);
+        const reply=enMode
+          ?(yes?('Yes Sir, it is '+c.en+' — '+snapshot.formatted12hEn+'.'):('No Sir, it is not '+c.en+' — '+snapshot.spokenTimeEn+' ('+snapshot.periodBn+').'))
+          :(yes?('হ্যাঁ স্যার, '+snapshot.spokenTimeBn+'।'):('না স্যার, এখন '+c.bn+' নয় — '+snapshot.spokenTimeBn+'।'));
+        return {handled:true,queryType:'period_check',reply,snapshot};
+      }
+    }
+    if(/^(?:(?:hey|hi|hello|চিন্টু|হে\s*চিন্টু)[\s,!]*)?(?:what(?:'s|\s+is)\s+the\s+time(?:\s+now|\s+right\s+now)?|what\s+time\s+is\s+it(?:\s+now|\s+right\s+now)?|tell\s+me\s+the\s+(?:current\s+)?time|current\s+time|(?:এখন\s*)?(?:কয়টা|কটা)\s*বাজে(?:\s*বলো|\s*হলো)?|(?:এখন\s*)?সময়\s*কত|(?:এখন\s*)?টাইম\s*কত|(?:ekhon|ekhn|akn)?\s*(?:koyta|koita|kota)\s*baje|(?:ekhon|akn)?\s*(?:somoy|time)\s*koto)[?!.\s]*$/i.test(lower)){
+      const reply=enMode?(snapshot.spokenTimeEn+', Sir.'):(snapshot.spokenTimeBn+', স্যার।');
+      return {handled:true,queryType:'time',reply,snapshot};
+    }
+    const gm=lower.match(/^(?:(?:hey|hi|hello)\s+chintu[\s,!]*)?(good\s+morning|good\s+afternoon|good\s+evening|good\s+night|শুভ\s*সকাল|শুভ\s*দুপুর|শুভ\s*বিকেল|শুভ\s*সন্ধ্যা|শুভ\s*রাত্রি)(?:[\s,!]*(?:chintu|চিন্টু|sir|স্যার))?[?!.\s]*$/i);
+    if(gm){
+      const g=gm[1].toLowerCase();
+      const isM=/morning|সকাল/.test(g);
+      const isA=/afternoon|দুপুর|বিকেল/.test(g);
+      const isN=/evening|night|সন্ধ্যা|রাত্রি/.test(g);
+      const match=(isM&&snapshot.periodKey==='morning')||(isA&&(snapshot.periodKey==='noon'||snapshot.periodKey==='afternoon'))||(isN&&(snapshot.periodKey==='night'||snapshot.periodKey==='late_night'));
+      const reply=enMode
+        ?(match?(snapshot.greetingEn+', Sir! It is '+snapshot.formatted12hEn+'. How are your plans going today?'):('Actually it is '+snapshot.formatted12hEn+' right now, Sir, so '+snapshot.greetingEn.toLowerCase()+'! How can I help you?'))
+        :(match?(snapshot.greetingBn+', স্যার! '+snapshot.spokenTimeBn+'। আজকের কাজকর্ম কেমন চলছে?'):('আসলে '+snapshot.spokenTimeBn+', স্যার — তাই '+snapshot.greetingBn+'! বলুন, আজ আপনাকে কীভাবে সাহায্য করতে পারি?'));
+      return {handled:true,queryType:'greeting',reply,snapshot};
+    }
+    return {handled:false,reply:'',snapshot};
+  }
+  return {getSystemTimeZone,getPeriodForHour,getSnapshot,answerQueryLocally,toBn};
+})();
+
+function todayKey(){
+  const snap=TimeService.getSnapshot();
+  return snap.year+'-'+String(snap.month).padStart(2,'0')+'-'+String(snap.day).padStart(2,'0');
+}
+
+function loadModelList(){
+  try{
+    const saved=JSON.parse(ls.get('zm_list')||'null');
+    if(Array.isArray(saved)&&saved.length>0){
+      const clean=[];
+      for(const m of saved){
+        if(typeof m==='string'&&m.trim()){
+          const name=m.trim().replace(/^models\//,'');
+          const resolved=DEPRECATED_MODELS.has(name)?DEFAULT_MODELS[0]:name;
+          if(!clean.includes(resolved))clean.push(resolved);
+        }
+      }
+      if(clean.length>0)return clean;
+    }
+  }catch(e){}
+  const legacy=(ls.get('zm')||'').trim();
+  if(legacy&&!DEPRECATED_MODELS.has(legacy)){
+    return [legacy,...DEFAULT_MODELS.filter(m=>m!==legacy)];
+  }
+  return [...DEFAULT_MODELS];
+}
+
+const DEFAULT_DAILY_QUOTA=100;
+
+function loadDailyQuota(){
+  const raw=Number(ls.get('z_quota'));
+  return Number.isFinite(raw)&&raw>=10&&raw<=5000?Math.round(raw):DEFAULT_DAILY_QUOTA;
+}
+
+function loadReqStats(){
+  const t=todayKey();
+  try{
+    const parsed=JSON.parse(ls.get('z_req_v2')||'null');
+    if(parsed&&parsed.date===t){
+      return {
+        date:t,
+        chat:Math.max(0,Number(parsed.chat)||0),
+        voice:Math.max(0,Number(parsed.voice)||0),
+        listen:Math.max(0,Number(parsed.listen)||0),
+        warned80:Boolean(parsed.warned80)
+      };
+    }
+    const legacy=JSON.parse(ls.get('z_req')||'null');
+    if(legacy&&legacy.date===t&&Number.isFinite(Number(legacy.count))){
+      const migrated={date:t,chat:Math.max(0,Number(legacy.count)),voice:0,listen:0,warned80:false};
+      ls.set('z_req_v2',JSON.stringify(migrated));
+      return migrated;
+    }
+  }catch(e){}
+  const fresh={date:t,chat:0,voice:0,listen:0,warned80:false};
+  ls.set('z_req_v2',JSON.stringify(fresh));
+  return fresh;
+}
+
+const initialStats=loadReqStats();
+const S={
+  models:loadModelList(),
+  lang:ls.get('zl')||'bn-BD',
+  ttsMode:ls.get('z_tts')||'gemini',
+  dailyQuota:loadDailyQuota(),
+  city:ls.get('zc')||'Dhaka',
+  reqStats:initialStats,
+  reqCount:initialStats.chat+initialStats.voice+initialStats.listen,
+  quotaAlertMsg:'',
+  hist:[],
+  tasks:[],
+  reminders:[],
+  facts:[],
+  contacts:[],
+  commLog:[],
+  activity:[],
+  weather:null,
+  report:null,
+  pendingAction:null,
+  lastFiredReminder:null,
+  activated:false,
+  inConv:false,
+  busy:false
+};
+ls.remove('zk');
+ls.set('zm_list',JSON.stringify(S.models));
+
+function maybeTriggerQuota80(forceReason){
+  const total=S.reqStats.chat+S.reqStats.voice+S.reqStats.listen;
+  S.reqCount=total;
+  const threshold=Math.ceil(S.dailyQuota*0.8);
+  if(forceReason||(total>=threshold&&!S.reqStats.warned80)){
+    S.reqStats.warned80=true;
+    ls.set('z_req_v2',JSON.stringify(S.reqStats));
+    const pct=Math.min(100,Math.round((total/Math.max(1,S.dailyQuota))*100));
+    const switched=S.ttsMode!=='browser';
+    if(switched){
+      S.ttsMode='browser';
+      ls.set('z_tts','browser');
+    }
+    S.quotaAlertMsg=forceReason
+      ?('সতর্কতা: ফ্রি কোটা সীমা পূর্ণ হয়েছে। চিন্টুর ভয়েস স্বয়ংক্রিয়ভাবে ফ্রি ব্রাউজার কণ্ঠে পরিবর্তন করা হয়েছে।')
+      :('সতর্কতা: আজকের ফ্রি কোটার '+pct+'% ('+total+'/'+S.dailyQuota+') ব্যবহৃত হয়েছে। কোটা বাঁচাতে ভয়েস স্বয়ংক্রিয়ভাবে ফ্রি ব্রাউজার কণ্ঠে পরিবর্তন করা হয়েছে।');
+    diagLog('TIMEOUT_RECOVERY',S.quotaAlertMsg,'warn');
+    if($('#status')&&!$('#status').classList.contains('err')){
+      $('#status').textContent=S.quotaAlertMsg;
+    }
+  }else if(total>=threshold){
+    const pct=Math.min(100,Math.round((total/Math.max(1,S.dailyQuota))*100));
+    S.quotaAlertMsg='সতর্কতা: আজকের ফ্রি কোটার '+pct+'% ('+total+'/'+S.dailyQuota+') ব্যবহৃত — ফ্রি ব্রাউজার ভয়েস চালু রাখুন।';
+  }
+}
+
+function addRequestCount(category,delta){
+  const n=Math.max(0,Number(delta)||0);
+  if(n<=0)return;
+  const cat=(category==='voice'||category==='listen')?category:'chat';
+  const t=todayKey();
+  if(S.reqStats.date!==t){
+    S.reqStats={date:t,chat:0,voice:0,listen:0,warned80:false};
+    S.quotaAlertMsg='';
+  }
+  S.reqStats[cat]=(S.reqStats[cat]||0)+n;
+  S.reqCount=S.reqStats.chat+S.reqStats.voice+S.reqStats.listen;
+  ls.set('z_req_v2',JSON.stringify(S.reqStats));
+  maybeTriggerQuota80(false);
+  updateBrainCard();
+}
+
+function loadArr(key){
+  try{
+    const parsed=JSON.parse(ls.get(key)||'[]');
+    return Array.isArray(parsed)?parsed:[];
+  }catch(e){return []}
+}
+S.hist=loadArr('zh').filter(x=>x&&typeof x==='object'&&(x.role==='user'||x.role==='model')&&Array.isArray(x.parts)&&x.parts.some(p=>p&&typeof p.text==='string'&&p.text.trim()));
+S.tasks=loadArr('zt').filter(x=>x&&typeof x==='object'&&typeof x.text==='string');
+S.reminders=loadArr('zr').filter(x=>x&&typeof x==='object'&&typeof x.text==='string'&&Number.isFinite(Number(x.dueAt)));
+S.facts=loadArr('zf').filter(x=>x&&typeof x==='object'&&typeof x.text==='string');
+
+const sevenDaysAgo=Date.now()-7*86400000;
+S.contacts=loadArr('zc_contacts').filter(c=>c&&typeof c==='object'&&typeof c.name==='string'&&typeof c.phone==='string').map(c=>({
+  id:String(c.id||('ct_'+Math.random().toString(36).slice(2,8))),
+  name:String(c.name).trim(),
+  phone:String(c.phone).trim(),
+  nicknames:typeof c.nicknames==='string'?c.nicknames.trim():'',
+  createdAt:Number(c.createdAt)||Date.now()
+}));
+S.commLog=loadArr('z_comm_log').filter(x=>x&&typeof x==='object'&&(x.kind==='call'||x.kind==='sms'||x.kind==='whatsapp')&&typeof x.contactName==='string'&&Number(x.ts)>=sevenDaysAgo).map(x=>({
+  id:String(x.id||('cm_'+x.ts)),
+  kind:x.kind,
+  contactName:String(x.contactName).slice(0,80),
+  ts:Number(x.ts)||Date.now()
+}));
+ls.set('z_comm_log',JSON.stringify(S.commLog));
+S.activity=loadArr('za').filter(x=>x&&typeof x==='object'&&typeof x.summary==='string'&&Number(x.ts)>=sevenDaysAgo);
+ls.set('za',JSON.stringify(S.activity));
+
+function logActivity(summary){
+  try{
+    const cutoff=Date.now()-7*86400000;
+    S.activity=[{date:todayKey(),summary:String(summary).slice(0,180),ts:Date.now()},...S.activity]
+      .filter(x=>Number(x.ts)>=cutoff)
+      .slice(0,50);
+    ls.set('za',JSON.stringify(S.activity));
+    updateBrainCard();
+  }catch(e){}
+}
+
+/* Clock & Greeting (System Clock + Local Timezone) */
+function tick(){
+  const snap=TimeService.getSnapshot();
+  const p=n=>String(n).padStart(2,'0');
+  $('#clock').innerHTML=p(snap.hour12)+':'+p(snap.minute)+'<small>:'+p(snap.second)+' '+snap.ampm+' · '+snap.periodBn+' ('+snap.timeZone+')</small>';
+  $('#greet').textContent=snap.greetingBn+', স্যার। চিন্টু আপনার সেবায়। ('+snap.spokenTimeBn+')';
+}
+tick();
+setInterval(tick,1000);
+
+/* Separate Configurable Timeouts & Diagnostic Logger */
+const TIMEOUTS={
+  speechEndMs:1600,
+  noSpeechRefreshMs:14000,
+  conversationIdleMs:30000,
+  transcribeTimeoutMs:22000,
+  aiResponseTimeoutMs:48000,
+  ttsGuardMinMs:12000
+};
+
+const diagLogs=[];
+function diagLog(event,detail,level){
+  const d=new Date();
+  const ts=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')+':'+String(d.getSeconds()).padStart(2,'0')+'.'+String(d.getMilliseconds()).padStart(3,'0');
+  const entry={ts,event,detail:String(detail||''),level:level||'info'};
+  diagLogs.push(entry);
+  if(diagLogs.length>140)diagLogs.shift();
+  try{console.log('[CHINTU]['+ts+']['+event+']',entry.detail)}catch(e){}
+  const list=$('#diag-list');
+  if(list&&$('#log-dlg')&&$('#log-dlg').open)renderDiagLogs();
+}
+function renderDiagLogs(){
+  const list=$('#diag-list');
+  if(!list)return;
+  list.innerHTML='';
+  if(diagLogs.length===0){
+    const li=document.createElement('li');
+    li.className='diag-row';
+    li.textContent='এখনো কোনো ভয়েস বা API ইভেন্ট রেকর্ড হয়নি।';
+    list.appendChild(li);
+    return;
+  }
+  for(let i=diagLogs.length-1;i>=0;i--){
+    const item=diagLogs[i];
+    const li=document.createElement('li');
+    li.className='diag-row '+(item.level||'info');
+    const tsEl=document.createElement('span');
+    tsEl.className='diag-ts';
+    tsEl.textContent=item.ts;
+    const tagEl=document.createElement('span');
+    tagEl.className='diag-tag';
+    tagEl.textContent=item.event;
+    const msgEl=document.createElement('span');
+    msgEl.textContent=item.detail;
+    li.append(tsEl,tagEl,msgEl);
+    list.appendChild(li);
+  }
+}
+
+/* Explicit Finite State Machine: OFF | STANDBY | LISTENING | TRANSCRIBING | THINKING | SPEAKING */
+const STATE_LABELS={
+  off:'Standby',
+  standby:'Standby',
+  listening:'Listening',
+  transcribing:'Transcribing',
+  thinking:'Thinking',
+  speaking:'Speaking'
+};
+function setState(s,msg,err){
+  const prev=document.body.dataset.s||'off';
+  document.body.dataset.s=s;
+  const label=STATE_LABELS[s]||'Standby';
+  $('#mode-pill').textContent=label;
+  $('#brain-state-label').textContent=label;
+  $('#activity-pct').textContent=s==='off'?'অফলাইন':label;
+  const st=$('#status');
+  st.textContent=msg;
+  st.className=err?'err':'';
+  if(prev!==s){
+    diagLog('STATE',prev+' -> '+s+(err?' (ERR: '+msg+')':''),err?'err':'info');
+  }
+  updateBrainCard();
+}
+function updateBrainCard(activeModel){
+  $('#brain-model').textContent=activeModel||S.models[0]||DEFAULT_MODELS[0];
+  $('#brain-lang').textContent=S.lang==='auto'?'Auto (Gemini Audio)':S.lang==='en-US'?'English (en-US)':'বাংলা (bn-BD)';
+  $('#brain-turns').textContent=S.hist.length+' বার্তা';
+  const total=S.reqStats.chat+S.reqStats.voice+S.reqStats.listen;
+  S.reqCount=total;
+  $('#brain-requests').textContent='আজকের অনুরোধ: '+total+'/'+S.dailyQuota;
+  $('#brain-req-sub').textContent='চ্যাট: '+S.reqStats.chat+' · ভয়েস: '+S.reqStats.voice+' · শোনা: '+S.reqStats.listen;
+  const qw=$('#quota-warn');
+  if(qw){
+    const pct=Math.round((total/Math.max(1,S.dailyQuota))*100);
+    if(S.quotaAlertMsg||pct>=80){
+      qw.style.display='block';
+      qw.textContent=S.quotaAlertMsg||('সতর্কতা: আজকের ফ্রি কোটার '+pct+'% ('+total+'/'+S.dailyQuota+') ব্যবহৃত হয়েছে।');
+    }else{
+      qw.style.display='none';
+      qw.textContent='';
+    }
+  }
+  $('#brain-activity-count').textContent=S.activity.length+' ঘটনা';
+  $('#quick-lang').textContent=S.lang==='auto'?'ভাষা: Auto (দ্বিগুণ)':S.lang==='en-US'?'ভাষা: English':'ভাষা: বাংলা';
+  const micBtn=$('#mic');
+  const micLabel=$('#mic-label');
+  if(S.activated){
+    micBtn.classList.add('active');
+    micLabel.textContent='Chintu সক্রিয় (বন্ধ করতে চাপুন)';
+  }else{
+    micBtn.classList.remove('active');
+    micLabel.textContent='Activate Chintu';
+  }
+}
+
+/* Tasks & Reminders UI */
+function findMatchingTaskIdx(query){
+  const q=String(query||'').trim().toLowerCase();
+  if(!q)return -1;
+  let idx=S.tasks.findIndex(t=>t.text.toLowerCase()===q);
+  if(idx>=0)return idx;
+  idx=S.tasks.findIndex(t=>t.text.toLowerCase().includes(q)||q.includes(t.text.toLowerCase()));
+  if(idx>=0)return idx;
+  const words=q.split(/\s+/).filter(w=>w.length>1);
+  if(words.length>0)return S.tasks.findIndex(t=>words.some(w=>t.text.toLowerCase().includes(w)));
+  return -1;
+}
+
+function saveTasks(){
+  ls.set('zt',JSON.stringify(S.tasks));
+  renderTasks();
+  renderReportCard();
+}
+function renderTasks(){
+  const list=$('#task-list');
+  list.innerHTML='';
+  const doneCount=S.tasks.filter(t=>t.done).length;
+  $('#task-count').textContent=doneCount+'/'+S.tasks.length;
+  if(S.tasks.length===0){
+    const empty=document.createElement('li');
+    empty.className='empty-msg';
+    empty.textContent='আজকের কোনো কাজ এখনো নেই। বলুন বা উপরে লিখুন।';
+    list.appendChild(empty);
+    return;
+  }
+  S.tasks.forEach((task,idx)=>{
+    const li=document.createElement('li');
+    li.className='item-row'+(task.done?' done':'');
+    const cb=document.createElement('input');
+    cb.type='checkbox';
+    cb.checked=Boolean(task.done);
+    cb.setAttribute('aria-label',task.text);
+    cb.onchange=()=>{
+      S.tasks[idx].done=cb.checked;
+      saveTasks();
+      if(cb.checked)logActivity('কাজ সম্পন্ন: '+task.text);
+    };
+    const span=document.createElement('span');
+    span.className='item-text';
+    span.textContent=task.text;
+    const del=document.createElement('button');
+    del.type='button';
+    del.className='item-del';
+    del.setAttribute('aria-label','মুছুন');
+    del.textContent='✕';
+    del.onclick=()=>{S.tasks.splice(idx,1);saveTasks()};
+    li.append(cb,span,del);
+    list.appendChild(li);
+  });
+}
+
+function saveReminders(){
+  ls.set('zr',JSON.stringify(S.reminders));
+  renderReminders();
+  renderReportCard();
+}
+function renderReminders(){
+  const list=$('#rem-list');
+  list.innerHTML='';
+  const active=S.reminders.filter(r=>!r.done).sort((a,b)=>a.dueAt-b.dueAt);
+  $('#rem-count').textContent=String(active.length);
+  if(active.length===0){
+    const empty=document.createElement('li');
+    empty.className='empty-msg';
+    empty.style.padding='8px';
+    empty.textContent='কোনো সক্রিয় রিমাইন্ডার নেই।';
+    list.appendChild(empty);
+    return;
+  }
+  active.forEach(rem=>{
+    const li=document.createElement('li');
+    li.className='item-row';
+    const info=document.createElement('div');
+    info.style.flex='1';
+    const t=document.createElement('div');
+    t.className='item-text';
+    t.textContent=rem.text;
+    const sub=document.createElement('div');
+    sub.className='item-sub';
+    sub.textContent=new Date(rem.dueAt).toLocaleString('bn-BD',{timeStyle:'short',dateStyle:'short'});
+    info.append(t,sub);
+    const del=document.createElement('button');
+    del.type='button';
+    del.className='item-del';
+    del.setAttribute('aria-label','মুছুন');
+    del.textContent='✕';
+    del.onclick=()=>{
+      S.reminders=S.reminders.filter(x=>x.id!==rem.id);
+      saveReminders();
+    };
+    li.append(info,del);
+    list.appendChild(li);
+  });
+}
+
+/* Facts / Memory Card */
+function saveFacts(){
+  ls.set('zf',JSON.stringify(S.facts));
+  renderFacts();
+}
+function renderFacts(){
+  const list=$('#fact-list');
+  list.innerHTML='';
+  $('#fact-count').textContent=S.facts.length+' তথ্য';
+  if(S.facts.length===0){
+    const empty=document.createElement('li');
+    empty.className='empty-msg';
+    empty.textContent='আপনার নাম, পরিবার, অভ্যাস বা পছন্দের কথা চিন্টুকে বলুন, এখানে জমা থাকবে।';
+    list.appendChild(empty);
+    return;
+  }
+  S.facts.forEach((fact,idx)=>{
+    const li=document.createElement('li');
+    li.className='item-row';
+    const info=document.createElement('div');
+    info.style.flex='1';
+    const txt=document.createElement('div');
+    txt.className='item-text';
+    txt.textContent=fact.text;
+    const cat=document.createElement('div');
+    cat.className='item-sub';
+    cat.textContent=fact.category||'সাধারণ';
+    info.append(txt,cat);
+    const del=document.createElement('button');
+    del.type='button';
+    del.className='item-del';
+    del.setAttribute('aria-label','তথ্য মুছুন');
+    del.textContent='✕';
+    del.onclick=()=>{S.facts.splice(idx,1);saveFacts()};
+    li.append(info,del);
+    list.appendChild(li);
+  });
+}
+
+$('#task-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const inp=$('#task-input');
+  const v=inp.value.trim();
+  if(!v)return;
+  S.tasks.unshift({text:v,done:false});
+  inp.value='';
+  saveTasks();
+  logActivity('নতুন কাজ: '+v);
+});
+$('#fact-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const inp=$('#fact-input');
+  const v=inp.value.trim();
+  if(!v)return;
+  S.facts.unshift({id:'fact_'+Date.now(),text:v,category:'সাধারণ',createdAt:Date.now()});
+  inp.value='';
+  saveFacts();
+  logActivity('স্মৃতি সংরক্ষণ: '+v);
+});
+
+/* Bangladeshi Phone Normalization + Loose Bangla/English/Banglish Contact Matcher */
+function normalizeBangladeshPhone(raw){
+  const bnToAscii=String(raw||'').replace(/[০-৯]/g,d=>String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const cleaned=bnToAscii.replace(/[^\d+]/g,'');
+  if(!cleaned)return '';
+  const digitsOnly=cleaned.replace(/\+/g,'');
+  if(/^008801\d{9}$/.test(digitsOnly))return '+'+digitsOnly.slice(2);
+  if(/^8801\d{9}$/.test(digitsOnly))return '+'+digitsOnly;
+  if(/^01\d{9}$/.test(digitsOnly))return '+880'+digitsOnly.slice(1);
+  if(/^1[3-9]\d{8}$/.test(digitsOnly))return '+880'+digitsOnly;
+  if(cleaned.startsWith('+')&&digitsOnly.length>=6)return '+'+digitsOnly;
+  return digitsOnly;
+}
+function phoneToWhatsAppDigits(normalizedPhone){
+  return normalizeBangladeshPhone(normalizedPhone).replace(/[^\d]/g,'');
+}
+const BN_PHON_MAP={
+  'অ':'o','আ':'a','ই':'i','ঈ':'i','উ':'u','ঊ':'u','ঋ':'ri','এ':'e','ঐ':'oi','ও':'o','ঔ':'ou',
+  'া':'a','ি':'i','ী':'i','ু':'u','ূ':'u','ৃ':'ri','ে':'e','ৈ':'oi','ো':'o','ৌ':'ou',
+  'ং':'ng','ঃ':'h','ঁ':'','্':'',
+  'ক':'k','খ':'kh','গ':'g','ঘ':'gh','ঙ':'ng','চ':'c','ছ':'ch','জ':'j','ঝ':'jh','ঞ':'n',
+  'ট':'t','ঠ':'th','ড':'d','ঢ':'dh','ণ':'n','ত':'t','থ':'th','দ':'d','ধ':'dh','ন':'n',
+  'প':'p','ফ':'f','ব':'b','ভ':'v','ম':'m','য':'j','র':'r','ল':'l','শ':'sh','ষ':'sh',
+  'স':'s','হ':'h','ড়':'r','ঢ়':'rh','য়':'y','ৎ':'t'
+};
+function toPhoneticLatin(raw){
+  const nfc=String(raw||'').normalize('NFC').toLowerCase().trim();
+  let out='';
+  for(let i=0;i<nfc.length;i++){
+    const ch=nfc[i];
+    if(BN_PHON_MAP[ch]!==undefined){out+=BN_PHON_MAP[ch];continue}
+    if(/[a-z0-9\s]/.test(ch))out+=ch;
+    else if(/[-_,./'"]/.test(ch))out+=' ';
+  }
+  return out
+    .replace(/ph/g,'f').replace(/bh/g,'v').replace(/wh/g,'w')
+    .replace(/ee|ea/g,'i').replace(/oo/g,'u').replace(/z/g,'j').replace(/q/g,'k')
+    .replace(/c(?=[ei])/g,'s').replace(/c/g,'k').replace(/(.)\1+/g,'$1')
+    .replace(/\s+/g,' ').trim();
+}
+function editDist(a,b){
+  if(a===b)return 0;
+  if(!a.length)return b.length;
+  if(!b.length)return a.length;
+  const dp=Array.from({length:b.length+1},(_,i)=>i);
+  for(let i=1;i<=a.length;i++){
+    let prev=i-1;
+    dp[0]=i;
+    for(let j=1;j<=b.length;j++){
+      const tmp=dp[j];
+      dp[j]=a[i-1]===b[j-1]?prev:1+Math.min(prev,dp[j],dp[j-1]);
+      prev=tmp;
+    }
+  }
+  return dp[b.length];
+}
+function scoreContactAlias(qr,qp,aliasRaw){
+  const ar=String(aliasRaw||'').normalize('NFC').toLowerCase().trim();
+  if(!ar||!qr)return 0;
+  if(ar===qr)return 100;
+  const ap=toPhoneticLatin(ar);
+  if(!ap||!qp)return 0;
+  if(ap===qp)return 95;
+  const qTokens=qp.split(/\s+/).filter(Boolean);
+  const aTokens=ap.split(/\s+/).filter(Boolean);
+  for(const qt of qTokens){
+    if(qt.length<2)continue;
+    for(const at of aTokens){
+      if(at===qt)return 90;
+      if((at.startsWith(qt)||qt.startsWith(at))&&Math.min(at.length,qt.length)>=3)return 80;
+      if(Math.abs(at.length-qt.length)<=1&&Math.min(at.length,qt.length)>=4&&editDist(at,qt)<=1)return 75;
+      const ask=at.replace(/[aeiou]/g,''),qsk=qt.replace(/[aeiou]/g,'');
+      if(ask.length>=2&&ask===qsk&&editDist(at,qt)<=2)return 72;
+    }
+  }
+  if(ap.includes(qp)&&qp.length>=3)return 70;
+  if(qp.includes(ap)&&ap.length>=3)return 68;
+  return 0;
+}
+function matchContactsLoosely(contacts,rawQuery){
+  const qr=String(rawQuery||'').normalize('NFC').toLowerCase().trim();
+  if(!qr||!Array.isArray(contacts)||contacts.length===0)return [];
+  const qp=toPhoneticLatin(qr);
+  const scored=[];
+  for(const c of contacts){
+    const aliases=[c.name,...(c.nicknames?String(c.nicknames).split(/[,/|;]+/):[])].map(s=>s.trim()).filter(Boolean);
+    let best=0;
+    for(const al of aliases){
+      const sc=scoreContactAlias(qr,qp,al);
+      if(sc>best)best=sc;
+    }
+    if(best>=68)scored.push({contact:c,score:best});
+  }
+  if(scored.length===0)return [];
+  scored.sort((a,b)=>b.score-a.score);
+  const top=scored[0].score;
+  if(top>=90&&scored.length>1&&scored[1].score<82)return [scored[0].contact];
+  return scored.filter(s=>s.score>=top-10).map(s=>s.contact);
+}
+
+function saveContacts(){
+  ls.set('zc_contacts',JSON.stringify(S.contacts));
+  renderContacts();
+}
+function upsertContactLocal(name,rawPhone,nicknames){
+  const cleanName=String(name||'').trim().slice(0,80);
+  const phone=normalizeBangladeshPhone(rawPhone);
+  const cleanNick=String(nicknames||'').trim().slice(0,120);
+  if(!cleanName||!phone)return null;
+  const existingIdx=S.contacts.findIndex(c=>c.name.toLowerCase()===cleanName.toLowerCase()||c.phone===phone);
+  if(existingIdx>=0){
+    const cur=S.contacts[existingIdx];
+    const mergedNick=cleanNick&&cur.nicknames&&!cur.nicknames.toLowerCase().includes(cleanNick.toLowerCase())
+      ?(cur.nicknames+', '+cleanNick)
+      :(cleanNick||cur.nicknames||'');
+    S.contacts[existingIdx]={...cur,name:cleanName,phone,nicknames:mergedNick};
+    saveContacts();
+    return S.contacts[existingIdx];
+  }
+  const created={id:'ct_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),name:cleanName,phone,nicknames:cleanNick,createdAt:Date.now()};
+  S.contacts.unshift(created);
+  saveContacts();
+  return created;
+}
+function renderContacts(){
+  const list=$('#contact-list');
+  if(!list)return;
+  list.innerHTML='';
+  $('#contact-count').textContent=S.contacts.length+' জন';
+  if(S.contacts.length===0){
+    const empty=document.createElement('li');
+    empty.className='empty-msg';
+    empty.textContent='কোনো কন্টাক্ট সেভ করা নেই। উপরে যোগ করুন বা বলুন "রাহিমের নম্বর 01712345678 সেভ করো"।';
+    list.appendChild(empty);
+    return;
+  }
+  S.contacts.forEach((ct,idx)=>{
+    const li=document.createElement('li');
+    li.className='item-row';
+    const info=document.createElement('div');
+    info.style.flex='1';
+    info.style.minWidth='0';
+    const nameEl=document.createElement('div');
+    nameEl.className='item-text';
+    nameEl.textContent=ct.name;
+    const subEl=document.createElement('div');
+    subEl.className='item-sub';
+    subEl.textContent=ct.phone+(ct.nicknames?' · '+ct.nicknames:'');
+    info.append(nameEl,subEl);
+
+    const acts=document.createElement('div');
+    acts.className='ct-actions';
+    const callBtn=document.createElement('button');
+    callBtn.type='button';
+    callBtn.className='ct-mini-btn';
+    callBtn.title='কল করুন';
+    callBtn.setAttribute('aria-label',ct.name+'-কে কল');
+    callBtn.textContent='📞';
+    callBtn.onclick=()=>openQuickConfirmAction('call',ct,'');
+
+    const waBtn=document.createElement('button');
+    waBtn.type='button';
+    waBtn.className='ct-mini-btn';
+    waBtn.title='WhatsApp';
+    waBtn.setAttribute('aria-label',ct.name+'-কে WhatsApp');
+    waBtn.textContent='💬';
+    waBtn.onclick=()=>openQuickConfirmAction('whatsapp',ct,'');
+
+    const delBtn=document.createElement('button');
+    delBtn.type='button';
+    delBtn.className='item-del';
+    delBtn.setAttribute('aria-label','কন্টাক্ট মুছুন');
+    delBtn.textContent='✕';
+    delBtn.onclick=()=>{S.contacts.splice(idx,1);saveContacts()};
+
+    acts.append(callBtn,waBtn,delBtn);
+    li.append(info,acts);
+    list.appendChild(li);
+  });
+}
+
+$('#contact-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('#ct-name').value.trim();
+  const rawPhone=$('#ct-phone').value.trim();
+  const nick=$('#ct-nick').value.trim();
+  const phone=normalizeBangladeshPhone(rawPhone);
+  if(!name||!phone||phone.length<6){
+    setState(S.activated?(S.inConv?'listening':'standby'):'off','সঠিক নাম এবং অন্তত ৬ সংখ্যার ফোন নম্বর দিন।',true);
+    return;
+  }
+  const saved=upsertContactLocal(name,phone,nick);
+  $('#ct-name').value='';
+  $('#ct-phone').value='';
+  $('#ct-nick').value='';
+  if(saved){
+    logActivity('কন্টাক্ট সেভ: '+saved.name);
+    $('#sub').textContent=saved.name+' ('+saved.phone+') কন্টাক্টে সেভ হয়েছে, স্যার।';
+  }
+});
+
+$('#pick-contacts-btn').addEventListener('click',async ()=>{
+  const note=$('#picker-note');
+  if(!('contacts' in navigator)||!navigator.contacts||typeof navigator.contacts.select!=='function'){
+    note.style.display='block';
+    note.textContent='এই ব্রাউজার বা ডিভাইসে সরাসরি ফোনবুক পিকার চালু নেই। অনুগ্রহ করে নিচের ঘরে নাম ও নম্বর লিখুন বা মুখে বলুন।';
+    $('#ct-name').focus();
+    return;
+  }
+  try{
+    const picked=await navigator.contacts.select(['name','tel'],{multiple:true});
+    if(!Array.isArray(picked)||picked.length===0)return;
+    let added=0;
+    for(const entry of picked){
+      const pName=(Array.isArray(entry.name)?entry.name[0]:entry.name)||'';
+      const pTel=(Array.isArray(entry.tel)?entry.tel[0]:entry.tel)||'';
+      if(String(pName).trim()&&normalizeBangladeshPhone(String(pTel)).length>=6){
+        upsertContactLocal(String(pName),String(pTel),'');
+        added++;
+      }
+    }
+    note.style.display='none';
+    if(added>0){
+      logActivity('ফোনবুক থেকে '+added+'টি কন্টাক্ট যোগ');
+      $('#sub').textContent='ফোনবুক থেকে '+added+'টি কন্টাক্ট যোগ হয়েছে, স্যার।';
+    }else{
+      note.style.display='block';
+      note.textContent='নির্বাচিত কন্টাক্টে বৈধ ফোন নম্বর পাওয়া যায়নি। নিচে হাতে লিখে যোগ করতে পারেন।';
+    }
+  }catch(err){
+    note.style.display='block';
+    note.textContent='ফোনবুক থেকে নির্বাচন করা যায়নি ('+(err&&err.message?err.message:'বাতিল বা অসমর্থিত')+'), নিচে নাম ও নম্বর লিখে সেভ করুন।';
+  }
+});
+
+/* Calls & Messages Privacy-Safe Log (time + contact name only, NEVER message text) */
+function todayCommCounts(){
+  const today=todayKey();
+  const cutoff=new Date(today+'T00:00:00').getTime();
+  let callsToday=0,messagesToday=0;
+  for(const item of S.commLog){
+    if(item.ts>=cutoff){
+      if(item.kind==='call')callsToday++;
+      else messagesToday++;
+    }
+  }
+  return {callsToday,messagesToday};
+}
+function recordCommLog(kind,contactName){
+  const cutoff=Date.now()-7*86400000;
+  S.commLog=[{id:'cm_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),kind,contactName:String(contactName||'অজানা').slice(0,80),ts:Date.now()},...S.commLog]
+    .filter(x=>x.ts>=cutoff)
+    .slice(0,120);
+  ls.set('z_comm_log',JSON.stringify(S.commLog));
+  renderReportCard();
+}
+
+/* Daily Report Card */
+function renderReportCard(){
+  const doneCount=S.tasks.filter(t=>t.done).length;
+  const pendingCount=S.tasks.filter(t=>!t.done).length;
+  const remCount=S.reminders.filter(r=>!r.done).length;
+  $('#rep-done').textContent=String(doneCount);
+  $('#rep-pending').textContent=String(pendingCount);
+  $('#rep-rems').textContent=String(remCount);
+
+  const {callsToday,messagesToday}=todayCommCounts();
+  const commEl=$('#rep-comm-summary');
+  if(commEl){
+    commEl.textContent='আজ '+TimeService.toBn(callsToday)+'টা কল, '+TimeService.toBn(messagesToday)+'টা মেসেজ';
+  }
+  const commList=$('#comm-log-list');
+  if(commList){
+    commList.innerHTML='';
+    const recent=S.commLog.slice(0,8);
+    if(recent.length===0){
+      const li=document.createElement('li');
+      li.className='empty-msg';
+      li.style.padding='6px';
+      li.textContent='আজ কোনো কল বা মেসেজ রেকর্ড নেই (মেসেজের লেখা সংরক্ষণ করা হয় না)।';
+      commList.appendChild(li);
+    }else{
+      recent.forEach(entry=>{
+        const li=document.createElement('li');
+        li.className='item-row';
+        li.style.padding='6px 8px';
+        const icon=entry.kind==='call'?'📞':entry.kind==='whatsapp'?'💬':'✉';
+        const kindLbl=entry.kind==='call'?'কল':entry.kind==='whatsapp'?'WhatsApp':'SMS';
+        const txt=document.createElement('span');
+        txt.className='item-text';
+        txt.style.fontSize='13px';
+        txt.textContent=icon+' '+entry.contactName+' ('+kindLbl+')';
+        const tm=document.createElement('span');
+        tm.className='card-meta';
+        tm.textContent=new Date(entry.ts).toLocaleTimeString('bn-BD',{timeStyle:'short'});
+        li.append(txt,tm);
+        commList.appendChild(li);
+      });
+    }
+  }
+
+  if(S.report&&S.report.summaryText){
+    $('#report-summary').textContent=S.report.summaryText;
+  }
+}
+
+/* Weather Card (Open-Meteo via server) */
+function renderWeather(w,errMsg){
+  $('#weather-city').textContent=(w&&w.city)||S.city;
+  const body=$('#weather-body');
+  if(errMsg){
+    body.innerHTML='';
+    const d=document.createElement('div');
+    d.className='empty-msg';
+    d.style.color='var(--err)';
+    d.textContent=errMsg;
+    body.appendChild(d);
+    return;
+  }
+  if(!w){
+    body.innerHTML='<div class="empty-msg">আবহাওয়ার তথ্য লোড হচ্ছে…</div>';
+    return;
+  }
+  body.innerHTML='';
+  const main=document.createElement('div');
+  main.className='weather-main';
+  const temp=document.createElement('div');
+  temp.className='weather-temp';
+  temp.textContent=w.temperature+'°C';
+  const cond=document.createElement('div');
+  cond.className='weather-cond';
+  cond.textContent=w.conditionBn;
+  main.append(temp,cond);
+
+  const stats=document.createElement('div');
+  stats.className='weather-stats';
+  stats.textContent='অনুভূত: '+w.apparentTemperature+'°C · আর্দ্রতা: '+w.humidity+'% · বাতাস: '+w.windSpeed+' km/h';
+
+  const fc=document.createElement('div');
+  fc.className='forecast-list';
+  (w.forecast||[]).slice(0,3).forEach((day,i)=>{
+    const card=document.createElement('div');
+    card.className='fc-day';
+    const dEl=document.createElement('div');
+    dEl.className='fc-date';
+    dEl.textContent=i===0?'আজ':i===1?'আগামীকাল':new Date(day.date+'T00:00:00').toLocaleDateString('bn-BD',{weekday:'short'});
+    const tEl=document.createElement('div');
+    tEl.className='fc-temps';
+    tEl.textContent=day.tempMax+'° / '+day.tempMin+'°';
+    const cEl=document.createElement('div');
+    cEl.className='fc-cond';
+    cEl.textContent=day.conditionBn;
+    card.append(dEl,tEl,cEl);
+    fc.appendChild(card);
+  });
+
+  body.append(main,stats,fc);
+}
+
+function getCachedWeather(city){
+  try{
+    const raw=JSON.parse(ls.get('zw_cache')||'null');
+    if(!raw||typeof raw!=='object'||!raw.data)return null;
+    if(String(raw.city||'').toLowerCase()!==city.toLowerCase())return null;
+    if(Date.now()-Number(raw.ts||0)>=WEATHER_CACHE_MS)return null;
+    return raw.data;
+  }catch(e){return null}
+}
+
+async function loadWeather(cityOverride,forceFresh){
+  const target=(cityOverride||S.city||'Dhaka').trim()||'Dhaka';
+  if(!forceFresh){
+    const cached=getCachedWeather(target);
+    if(cached){
+      S.weather=cached;
+      renderWeather(cached);
+      return;
+    }
+  }
+  if(!navigator.onLine){
+    renderWeather(null,'ইন্টারনেট না থাকায় আবহাওয়া লোড করা যাচ্ছে না।');
+    return;
+  }
+  try{
+    const r=await fetch('/api/weather?city='+encodeURIComponent(target));
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error||'আবহাওয়া পাওয়া যায়নি');
+    S.weather=j;
+    ls.set('zw_cache',JSON.stringify({city:target.toLowerCase(),data:j,ts:Date.now()}));
+    renderWeather(j);
+  }catch(e){
+    renderWeather(null,e&&e.message?e.message:'আবহাওয়া লোড করতে সমস্যা হয়েছে।');
+  }
+}
+
+function buildLocalDailyReport(enMode){
+  const snap=TimeService.getSnapshot();
+  const doneTasks=S.tasks.filter(t=>t.done).map(t=>t.text);
+  const pendingTasks=S.tasks.filter(t=>!t.done).map(t=>t.text);
+  const upcomingReminders=S.reminders.filter(r=>!r.done).map(r=>({text:r.text,dueAt:r.dueAt}));
+  const {callsToday,messagesToday}=todayCommCounts();
+  let summary='';
+  if(enMode){
+    const care=pendingTasks.length===0
+      ?'You finished everything today, Sir—please get some well-deserved rest.'
+      :'Take it easy and pace yourself for the remaining items, Sir.';
+    summary='Daily report at '+snap.formatted12hEn+', Sir: '+doneTasks.length+' task'+(doneTasks.length===1?'':'s')+' completed, '+pendingTasks.length+' pending, '+upcomingReminders.length+' active reminder'+(upcomingReminders.length===1?'':'s')+'. Today '+callsToday+' call'+(callsToday===1?'':'s')+', '+messagesToday+' message'+(messagesToday===1?'':'s')+'. '+care;
+  }else{
+    const care=pendingTasks.length===0
+      ?'আজকের সব কাজ শেষ করেছেন, স্যার—এবার নিশ্চিন্তে বিশ্রাম নিন।'
+      :'বাকি কাজগুলো ধীরেসুস্থে সেরে নেবেন স্যার, নিজের খেয়াল রাখুন।';
+    summary=snap.greetingBn+', স্যার। আজ '+doneTasks.length+'টি কাজ সম্পন্ন হয়েছে, '+pendingTasks.length+'টি কাজ বাকি আছে এবং '+upcomingReminders.length+'টি সক্রিয় রিমাইন্ডার রয়েছে। আজ '+TimeService.toBn(callsToday)+'টা কল, '+TimeService.toBn(messagesToday)+'টা মেসেজ। '+care;
+  }
+  S.report={
+    doneCount:doneTasks.length,
+    pendingCount:pendingTasks.length,
+    doneTasks,
+    pendingTasks,
+    upcomingReminders,
+    callsToday,
+    messagesToday,
+    summaryText:summary,
+    generatedAt:Date.now()
+  };
+  renderReportCard();
+  logActivity('দৈনিক রিপোর্ট (লোকাল · ০ অনুরোধ)');
+  return summary;
+}
+
+$('#weather-refresh').onclick=()=>loadWeather(S.city,true);
+$('#report-btn').onclick=async ()=>{
+  const summary=buildLocalDailyReport(S.lang==='en-US');
+  $('#you').textContent='দৈনিক রিপোর্ট (কার্ড)';
+  $('#sub').textContent=summary;
+  diagLog('AI_RES','REPORT_LOCAL (0 Gemini calls)','ok');
+  if(!S.busy){
+    S.busy=true;
+    pauseRecognition();
+    setState('speaking','Speaking · দৈনিক রিপোর্ট…');
+    await speak(summary);
+    S.busy=false;
+    if(S.activated){
+      S.inConv=true;
+      startListeningLoop();
+    }else{
+      setState('off','দৈনিক রিপোর্ট তৈরি হয়েছে (লোকাল)');
+    }
+  }
+};
+
+maybeTriggerQuota80(false);
+renderTasks();
+renderReminders();
+renderFacts();
+renderContacts();
+renderReportCard();
+updateBrainCard();
+loadWeather();
+
+/* Reminder Checker & Snooze */
+function requestNotifPermission(){
+  try{
+    if('Notification' in window&&Notification.permission==='default'){
+      Notification.requestPermission().catch(()=>{});
+    }
+  }catch(e){}
+}
+
+function showReminderAlert(rem){
+  S.lastFiredReminder=rem;
+  $('#rem-banner-text').textContent=rem.text;
+  $('#rem-banner-sub').textContent='নির্ধারিত সময়: '+new Date(rem.dueAt).toLocaleString('bn-BD',{timeStyle:'short'});
+  $('#rem-banner').classList.add('open');
+
+  try{
+    if('Notification' in window&&Notification.permission==='granted'){
+      new Notification('চিন্টু — রিমাইন্ডার',{body:rem.text});
+    }
+  }catch(e){}
+
+  const spoken='স্যার, মনে করিয়ে দিচ্ছি: '+rem.text;
+  $('#sub').textContent=spoken;
+  if(!S.busy){
+    S.busy=true;
+    pauseRecognition();
+    setState('speaking','Speaking · রিমাইন্ডার বলছে…');
+    speak(spoken).then(()=>{
+      S.busy=false;
+      if(S.activated){
+        S.inConv=true;
+        startListeningLoop();
+      }else{
+        setState('off','রিমাইন্ডার বাজল — "১০ মিনিট পর আবার বলো" বলতে পারেন');
+      }
+    });
+  }
+}
+
+function snoozeActiveReminder(minutes){
+  const target=S.lastFiredReminder;
+  if(!target)return;
+  const newDue=Date.now()+minutes*60000;
+  const idx=S.reminders.findIndex(r=>r.id===target.id);
+  if(idx>=0){
+    S.reminders[idx].dueAt=newDue;
+    S.reminders[idx].done=false;
+    S.reminders[idx].fired=false;
+  }else{
+    S.reminders.push({id:'rem_'+Date.now(),text:target.text,dueAt:newDue,done:false,fired:false});
+  }
+  $('#rem-banner').classList.remove('open');
+  S.lastFiredReminder=null;
+  saveReminders();
+  logActivity('রিমাইন্ডার স্নুজ ('+minutes+' মি.): '+target.text);
+}
+
+$('#rem-snooze').onclick=()=>{
+  snoozeActiveReminder(10);
+  const msg='ঠিক আছে স্যার, ১০ মিনিট পর আবার মনে করিয়ে দেব।';
+  $('#sub').textContent=msg;
+  if(!S.busy){
+    S.busy=true;
+    pauseRecognition();
+    setState('speaking','Speaking · চিন্টু বলছে…');
+    speak(msg).then(()=>{
+      S.busy=false;
+      if(S.activated)startListeningLoop();
+      else setState('off','১০ মিনিটের জন্য স্নুজ করা হয়েছে');
+    });
+  }
+};
+$('#rem-dismiss').onclick=()=>{
+  if(S.lastFiredReminder){
+    const idx=S.reminders.findIndex(r=>r.id===S.lastFiredReminder.id);
+    if(idx>=0)S.reminders[idx].done=true;
+    saveReminders();
+  }
+  S.lastFiredReminder=null;
+  $('#rem-banner').classList.remove('open');
+};
+
+setInterval(()=>{
+  const now=Date.now();
+  let changed=false;
+  for(const rem of S.reminders){
+    if(!rem.done&&!rem.fired&&rem.dueAt<=now){
+      rem.fired=true;
+      changed=true;
+      showReminderAlert(rem);
+      break;
+    }
+  }
+  if(changed)saveReminders();
+},2000);
+
+/* Safety Confirmation, Disambiguation & Execution for Calls / SMS / WhatsApp */
+function buildExecutionUrl(kind,phone,draft){
+  const norm=normalizeBangladeshPhone(phone);
+  if(kind==='call')return 'tel:'+norm;
+  if(kind==='sms')return 'sms:'+norm+'?body='+encodeURIComponent(draft||'');
+  return 'https://wa.me/'+phoneToWhatsAppDigits(norm)+'?text='+encodeURIComponent(draft||'');
+}
+function promptQuestionForPending(pa){
+  if(!pa||!pa.contact)return '';
+  if(pa.kind==='call')return pa.contact.name+'-কে কল করব, স্যার?';
+  const ch=pa.kind==='whatsapp'?'WhatsApp':'SMS';
+  return pa.contact.name+'-কে '+ch+'-এ লিখলাম: "'+(pa.draft||'')+'"। পাঠাব, স্যার?';
+}
+function openQuickConfirmAction(kind,contact,draft){
+  S.pendingAction={
+    id:'pa_'+Date.now(),
+    kind,
+    contact,
+    contactQuery:contact.name,
+    draft:draft||'',
+    stage:'confirm',
+    matches:[contact],
+    createdAt:Date.now()
+  };
+  renderActionCard();
+  const q=promptQuestionForPending(S.pendingAction);
+  $('#sub').textContent=q;
+  if(!S.busy){
+    S.busy=true;
+    pauseRecognition();
+    setState('speaking','Speaking · নিশ্চিতকরণ…');
+    speak(q).then(()=>{
+      S.busy=false;
+      if(S.activated){S.inConv=true;startListeningLoop()}
+      else setState('off','নিশ্চিত করতে "হ্যাঁ" বলুন বা বাটনে চাপুন');
+    });
+  }
+}
+function cancelPendingAction(silent){
+  S.pendingAction=null;
+  renderActionCard();
+  if(silent)return;
+  const msg='ঠিক আছে স্যার, বাতিল করলাম।';
+  $('#sub').textContent=msg;
+  if(!S.busy){
+    S.busy=true;
+    pauseRecognition();
+    setState('speaking','Speaking · বাতিল');
+    speak(msg).then(()=>{
+      S.busy=false;
+      if(S.activated){S.inConv=true;startListeningLoop()}
+      else setState('off','অপেক্ষায় — Activate Chintu চাপুন বা নিচে লিখুন');
+    });
+  }
+}
+async function executePendingAction(){
+  const pa=S.pendingAction;
+  if(!pa||!pa.contact)return;
+  const draftEl=$('#action-draft');
+  if(draftEl)pa.draft=draftEl.value;
+  const url=buildExecutionUrl(pa.kind,pa.contact.phone,pa.draft);
+  pa.stage='execute';
+  pa.execUrl=url;
+  renderActionCard();
+
+  recordCommLog(pa.kind,pa.contact.name);
+  logActivity((pa.kind==='call'?'কল প্রস্তুত: ':pa.kind==='whatsapp'?'WhatsApp প্রস্তুত: ':'SMS প্রস্তুত: ')+pa.contact.name);
+
+  try{
+    if(pa.kind==='whatsapp'){
+      window.open(url,'_blank','noopener,noreferrer');
+    }else{
+      window.open(url,'_top');
+    }
+  }catch(e){}
+
+  const spoken='আপনি শুধু একবার বাটনে ট্যাপ করুন, স্যার।';
+  $('#sub').textContent=spoken;
+  S.busy=true;
+  clearSilenceTimer();
+  pauseRecognition();
+  setState('speaking','Speaking · চিন্টু বলছে…');
+  await speak(spoken);
+  S.busy=false;
+  if(S.activated){S.inConv=true;startListeningLoop()}
+  else setState('off','উপরের সবুজ বাটনে ট্যাপ করুন, স্যার');
+}
+function renderActionCard(){
+  const card=$('#action-card');
+  if(!card)return;
+  const pa=S.pendingAction;
+  if(!pa){
+    card.classList.remove('open');
+    card.innerHTML='';
+    return;
+  }
+  card.classList.add('open');
+  card.innerHTML='';
+
+  const kindLabel=pa.kind==='call'?'📞 কল':pa.kind==='whatsapp'?'💬 WhatsApp':'✉ SMS';
+  const head=document.createElement('div');
+  head.className='action-card-head';
+  const title=document.createElement('div');
+  title.className='action-card-title';
+  const badge=document.createElement('span');
+  badge.className='action-card-badge';
+
+  if(pa.stage==='disambiguate'){
+    title.textContent=kindLabel+' · কোনজনকে বেছে নেব?';
+    badge.textContent=pa.matches.length+'টি মিল';
+    head.append(title,badge);
+    const sub=document.createElement('div');
+    sub.className='action-card-sub';
+    sub.textContent='একটি কন্টাক্ট বাছুন অথবা মুখে "১ম" / "২য়" বলুন:';
+    const choices=document.createElement('div');
+    choices.className='action-choices';
+    pa.matches.forEach((m,i)=>{
+      const btn=document.createElement('button');
+      btn.type='button';
+      btn.className='action-choice-btn';
+      btn.textContent=(i+1)+'. '+m.name+' ('+m.phone+')';
+      btn.onclick=()=>openQuickConfirmAction(pa.kind,m,pa.draft||'');
+      choices.appendChild(btn);
+    });
+    const btns=document.createElement('div');
+    btns.className='action-btns';
+    const cancelBtn=document.createElement('button');
+    cancelBtn.type='button';
+    cancelBtn.className='btn-cancel';
+    cancelBtn.textContent='বাতিল';
+    cancelBtn.onclick=()=>cancelPendingAction(false);
+    btns.appendChild(cancelBtn);
+    card.append(head,sub,choices,btns);
+    return;
+  }
+
+  if(pa.stage==='need_number'){
+    title.textContent=kindLabel+' · কন্টাক্ট পাওয়া যায়নি';
+    badge.textContent=pa.contactQuery||'নতুন নম্বর';
+    head.append(title,badge);
+    const sub=document.createElement('div');
+    sub.className='action-card-sub';
+    sub.textContent='"'+(pa.contactQuery||'')+'" নামে কোনো নম্বর নেই। নিচে নম্বর লিখুন বা মুখে বলুন:';
+    const form=document.createElement('form');
+    form.className='mini-form';
+    const inp=document.createElement('input');
+    inp.placeholder='নম্বর দিন (যেমন 01712345678)';
+    inp.inputMode='tel';
+    const saveBtn=document.createElement('button');
+    saveBtn.type='submit';
+    saveBtn.textContent='সেভ করে এগিয়ে যান';
+    form.append(inp,saveBtn);
+    form.onsubmit=e=>{
+      e.preventDefault();
+      const norm=normalizeBangladeshPhone(inp.value);
+      if(!norm||norm.length<6){inp.focus();return}
+      const saved=upsertContactLocal(pa.contactQuery||'নতুন কন্টাক্ট',norm,'');
+      if(saved)openQuickConfirmAction(pa.kind,saved,pa.draft||'');
+    };
+    const btns=document.createElement('div');
+    btns.className='action-btns';
+    const cancelBtn=document.createElement('button');
+    cancelBtn.type='button';
+    cancelBtn.className='btn-cancel';
+    cancelBtn.textContent='বাতিল';
+    cancelBtn.onclick=()=>cancelPendingAction(false);
+    btns.appendChild(cancelBtn);
+    card.append(head,sub,form,btns);
+    return;
+  }
+
+  if(pa.stage==='confirm'){
+    title.textContent=kindLabel+' নিশ্চিতকরণ · '+(pa.contact?pa.contact.name:'');
+    badge.textContent=pa.contact?pa.contact.phone:'';
+    head.append(title,badge);
+    card.appendChild(head);
+
+    if(pa.kind==='sms'||pa.kind==='whatsapp'){
+      const sub=document.createElement('div');
+      sub.className='action-card-sub';
+      sub.textContent='খসড়া মেসেজ (চাইলে পরিবর্তন করে "হ্যাঁ" বলুন বা বাটনে চাপুন):';
+      const ta=document.createElement('textarea');
+      ta.id='action-draft';
+      ta.className='action-draft';
+      ta.value=pa.draft||'';
+      ta.oninput=()=>{if(S.pendingAction)S.pendingAction.draft=ta.value};
+      card.append(sub,ta);
+    }else{
+      const sub=document.createElement('div');
+      sub.className='action-card-sub';
+      sub.textContent=(pa.contact?pa.contact.name:'')+' ('+(pa.contact?pa.contact.phone:'')+') নম্বরে কল করতে প্রস্তুত। নিশ্চিত করবেন, স্যার?';
+      card.appendChild(sub);
+    }
+
+    const btns=document.createElement('div');
+    btns.className='action-btns';
+    const okBtn=document.createElement('button');
+    okBtn.type='button';
+    okBtn.id='confirm-action-btn';
+    okBtn.className='btn-confirm';
+    okBtn.textContent=pa.kind==='call'?'হ্যাঁ, কল দিন':'হ্যাঁ, পাঠান';
+    okBtn.onclick=()=>executePendingAction();
+    const cancelBtn=document.createElement('button');
+    cancelBtn.type='button';
+    cancelBtn.id='cancel-action-btn';
+    cancelBtn.className='btn-cancel';
+    cancelBtn.textContent='না / বাতিল';
+    cancelBtn.onclick=()=>cancelPendingAction(false);
+    btns.append(okBtn,cancelBtn);
+    card.appendChild(btns);
+    return;
+  }
+
+  if(pa.stage==='execute'){
+    title.textContent=kindLabel+' প্রস্তুত · '+(pa.contact?pa.contact.name:'');
+    badge.textContent=pa.contact?pa.contact.phone:'';
+    head.append(title,badge);
+    const sub=document.createElement('div');
+    sub.className='action-card-sub';
+    sub.textContent='নিরাপত্তার জন্য নিচের সবুজ বাটনে একবার ট্যাপ করুন, স্যার:';
+    const btns=document.createElement('div');
+    btns.className='action-btns';
+    const link=document.createElement('a');
+    link.id='exec-action-link';
+    link.className='big-exec-btn';
+    link.href=pa.execUrl||'#';
+    if(pa.kind==='whatsapp'){
+      link.target='_blank';
+      link.rel='noopener noreferrer';
+      link.textContent='💬 WhatsApp-এ পাঠান';
+    }else if(pa.kind==='sms'){
+      link.target='_top';
+      link.textContent='✉ SMS পাঠান';
+    }else{
+      link.target='_top';
+      link.textContent='📞 কল দিন';
+    }
+    const closeBtn=document.createElement('button');
+    closeBtn.type='button';
+    closeBtn.className='btn-cancel';
+    closeBtn.textContent='বন্ধ';
+    closeBtn.onclick=()=>{S.pendingAction=null;renderActionCard()};
+    btns.append(link,closeBtn);
+    card.append(head,sub,btns);
+  }
+}
+
+/* Apply Gemini Function-Calling Actions to Local State */
+function applyServerActions(actions){
+  if(!Array.isArray(actions))return;
+  for(const act of actions){
+    const p=act.payload||{};
+    if(act.type==='add_task'&&p.title){
+      S.tasks.unshift({text:String(p.title),done:false});
+      saveTasks();
+      logActivity('কাজ যোগ: '+p.title);
+    }else if(act.type==='complete_task'){
+      const idx=findMatchingTaskIdx(p.matchedText||p.query);
+      if(idx>=0){
+        S.tasks[idx].done=true;
+        saveTasks();
+        logActivity('কাজ সম্পন্ন: '+S.tasks[idx].text);
+      }
+    }else if(act.type==='delete_task'){
+      const idx=findMatchingTaskIdx(p.matchedText||p.query);
+      if(idx>=0){
+        const removed=S.tasks.splice(idx,1)[0];
+        saveTasks();
+        logActivity('কাজ মুছে ফেলা: '+removed.text);
+      }
+    }else if(act.type==='add_reminder'&&p.text){
+      requestNotifPermission();
+      if(p.isSnooze&&S.lastFiredReminder){
+        const oldIdx=S.reminders.findIndex(r=>r.id===S.lastFiredReminder.id);
+        if(oldIdx>=0)S.reminders[oldIdx].done=true;
+        S.lastFiredReminder=null;
+        $('#rem-banner').classList.remove('open');
+      }
+      S.reminders.push({
+        id:String(p.id||'rem_'+Date.now()),
+        text:String(p.text),
+        dueAt:Number(p.dueAt)||Date.now()+600000,
+        done:false,
+        fired:false
+      });
+      saveReminders();
+      logActivity('রিমাইন্ডার সেট: '+p.text);
+    }else if(act.type==='remember_fact'&&p.fact){
+      const factText=String(p.fact);
+      if(!S.facts.some(f=>f.text.toLowerCase()===factText.toLowerCase())){
+        S.facts.unshift({
+          id:String(p.id||'fact_'+Date.now()),
+          text:factText,
+          category:String(p.category||'সাধারণ'),
+          createdAt:Date.now()
+        });
+        saveFacts();
+        logActivity('স্মৃতি সংরক্ষণ: '+factText);
+      }
+    }else if(act.type==='add_contact'&&p.name&&p.phone){
+      const saved=upsertContactLocal(p.name,p.phone,p.nicknames||'');
+      if(saved)logActivity('কন্টাক্ট সেভ: '+saved.name);
+    }else if(act.type==='prepare_call'||act.type==='prepare_sms'||act.type==='prepare_whatsapp'){
+      const kind=act.type==='prepare_call'?'call':act.type==='prepare_sms'?'sms':'whatsapp';
+      const targetName=String(p.targetName||'').trim();
+      const draft=String(p.draft||'').trim();
+      // Resolve real contact objects (with phone number) strictly in browser localStorage
+      const serverIds=Array.isArray(p.matches)?p.matches.map(m=>m&&m.id).filter(Boolean):[];
+      let localMatches=serverIds.length>0
+        ?S.contacts.filter(c=>serverIds.includes(c.id))
+        :[];
+      if(localMatches.length===0&&targetName){
+        localMatches=matchContactsLoosely(S.contacts,targetName);
+      }
+      if(localMatches.length===1){
+        S.pendingAction={
+          id:'pa_'+Date.now(),
+          kind,
+          contact:localMatches[0],
+          contactQuery:targetName,
+          draft,
+          stage:'confirm',
+          matches:localMatches,
+          createdAt:Date.now()
+        };
+      }else if(localMatches.length>1){
+        S.pendingAction={
+          id:'pa_'+Date.now(),
+          kind,
+          contact:null,
+          contactQuery:targetName,
+          draft,
+          stage:'disambiguate',
+          matches:localMatches,
+          createdAt:Date.now()
+        };
+      }else{
+        S.pendingAction={
+          id:'pa_'+Date.now(),
+          kind,
+          contact:null,
+          contactQuery:targetName,
+          draft,
+          stage:'need_number',
+          matches:[],
+          createdAt:Date.now()
+        };
+      }
+      renderActionCard();
+    }else if(act.type==='daily_report'){
+      logActivity('দৈনিক রিপোর্ট দেখা হয়েছে');
+    }
+  }
+}
+
+/* Brain Silhouette Geometry (Shared by Brain Canvas Mask & 8 Edge Connection Lines) */
+let wakeFlashUntil=0;
+function triggerWakeFlash(){
+  wakeFlashUntil=performance.now()+560;
+}
+
+function cubicPoint(p0,p1,p2,p3,u){
+  const m=1-u;
+  return [
+    m*m*m*p0[0]+3*m*m*u*p1[0]+3*m*u*u*p2[0]+u*u*u*p3[0],
+    m*m*m*p0[1]+3*m*m*u*p1[1]+3*m*u*u*p2[1]+u*u*u*p3[1]
+  ];
+}
+
+const BRAIN_SEGMENTS=[
+  // Right hemisphere (top fissure notch clockwise to occipital/cerebellum notch)
+  [[0,-0.76],[0.14,-0.88],[0.36,-0.88],[0.48,-0.74]],
+  [[0.48,-0.74],[0.64,-0.72],[0.78,-0.56],[0.80,-0.38]],
+  [[0.80,-0.38],[0.92,-0.26],[0.94,-0.02],[0.88,0.14]],
+  [[0.88,0.14],[0.92,0.30],[0.80,0.48],[0.60,0.50]],
+  [[0.60,0.50],[0.56,0.56],[0.46,0.60],[0.36,0.58]],
+  // Right cerebellum
+  [[0.36,0.58],[0.46,0.68],[0.34,0.80],[0.14,0.74]],
+  // Brain stem
+  [[0.14,0.74],[0.13,0.83],[0.12,0.93],[0.08,0.96]],
+  [[0.08,0.96],[0.03,0.99],[-0.03,0.99],[-0.08,0.96]],
+  [[-0.08,0.96],[-0.12,0.93],[-0.13,0.83],[-0.14,0.74]],
+  // Left cerebellum (mirrored)
+  [[-0.14,0.74],[-0.34,0.80],[-0.46,0.68],[-0.36,0.58]],
+  // Left hemisphere (mirrored back up to top fissure notch)
+  [[-0.36,0.58],[-0.46,0.60],[-0.56,0.56],[-0.60,0.50]],
+  [[-0.60,0.50],[-0.80,0.48],[-0.92,0.30],[-0.88,0.14]],
+  [[-0.88,0.14],[-0.94,-0.02],[-0.92,-0.26],[-0.80,-0.38]],
+  [[-0.80,-0.38],[-0.78,-0.56],[-0.64,-0.72],[-0.48,-0.74]],
+  [[-0.48,-0.74],[-0.36,-0.88],[-0.14,-0.88],[0,-0.76]]
+];
+
+const BRAIN_POLY=(()=>{
+  const pts=[];
+  for(const seg of BRAIN_SEGMENTS){
+    for(let k=0;k<12;k++){
+      pts.push(cubicPoint(seg[0],seg[1],seg[2],seg[3],k/12));
+    }
+  }
+  return pts;
+})();
+
+function getBrainEdgeSvgPoint(angle,cx,cy,unitScale){
+  const dx=Math.cos(angle),dy=Math.sin(angle);
+  let bestT=0.82*unitScale;
+  for(let i=0;i<BRAIN_POLY.length;i++){
+    const a=BRAIN_POLY[i];
+    const b=BRAIN_POLY[(i+1)%BRAIN_POLY.length];
+    const ax=a[0]*unitScale,ay=a[1]*unitScale;
+    const bx=b[0]*unitScale,by=b[1]*unitScale;
+    const sx=bx-ax,sy=by-ay;
+    const denom=dx*sy-dy*sx;
+    if(Math.abs(denom)<1e-6)continue;
+    const t=(ax*sy-ay*sx)/denom;
+    const u=(ax*dy-ay*dx)/denom;
+    if(t>0&&u>=0&&u<=1){
+      bestT=t;
+      break;
+    }
+  }
+  return [cx+dx*bestT,cy+dy*bestT];
+}
+
+function traceBrainPath(ctx,cx,cy,s){
+  ctx.beginPath();
+  const first=BRAIN_SEGMENTS[0][0];
+  ctx.moveTo(cx+first[0]*s,cy+first[1]*s);
+  for(const seg of BRAIN_SEGMENTS){
+    ctx.bezierCurveTo(
+      cx+seg[1][0]*s,cy+seg[1][1]*s,
+      cx+seg[2][0]*s,cy+seg[2][1]*s,
+      cx+seg[3][0]*s,cy+seg[3][1]*s
+    );
+  }
+  ctx.closePath();
+}
+
+/* Position 8 Tool Nodes & Draw Glowing SVG Lines to the Brain Edge */
+function layoutNodes(){
+  const stage=$('#stage');
+  const svg=$('#lines-svg');
+  const nodes=$$('.node');
+  if(!stage||!svg||nodes.length===0)return;
+  const cx=200,cy=200,r=160;
+  // .orb-frame is 56% of 400 = 224, canvas R = 0.41 -> 224 * 0.41 = 91.84 in SVG viewBox
+  const brainSvgUnit=91.84;
+  svg.innerHTML='';
+  nodes.forEach((node,i)=>{
+    const angle=(i*(2*Math.PI/nodes.length))-Math.PI/2;
+    const xPct=50+40*Math.cos(angle);
+    const yPct=50+40*Math.sin(angle);
+    node.style.left=xPct+'%';
+    node.style.top=yPct+'%';
+    const [bx,by]=getBrainEdgeSvgPoint(angle,cx,cy,brainSvgUnit);
+    const lx=cx+r*Math.cos(angle);
+    const ly=cy+r*Math.sin(angle);
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',bx.toFixed(1));
+    line.setAttribute('y1',by.toFixed(1));
+    line.setAttribute('x2',lx.toFixed(1));
+    line.setAttribute('y2',ly.toFixed(1));
+    line.setAttribute('class','conn-line');
+    svg.appendChild(line);
+
+    const dot=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    dot.setAttribute('cx',bx.toFixed(1));
+    dot.setAttribute('cy',by.toFixed(1));
+    dot.setAttribute('r','3');
+    dot.setAttribute('class','conn-dot');
+    svg.appendChild(dot);
+  });
+}
+layoutNodes();
+$$('.node').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    if(btn.dataset.action==='focus-tasks'){
+      $('#task-input').focus();
+      $('#task-input').scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    if(btn.dataset.action==='focus-memory'){
+      $('#fact-input').focus();
+      $('#memory-card').scrollIntoView({behavior:'smooth',block:'center'});
+      return;
+    }
+    if(btn.dataset.tool==='কল'||btn.dataset.tool==='হোয়াটসঅ্যাপ'){
+      $('#contacts-card').scrollIntoView({behavior:'smooth',block:'center'});
+      $('#sub').textContent='নিচের কন্টাক্ট কার্ড থেকে সরাসরি কল/WhatsApp চাপুন অথবা নাম বলে আদেশ দিন, স্যার।';
+      return;
+    }
+    const prompt=btn.dataset.prompt;
+    if(prompt){
+      if(S.activated)S.inConv=true;
+      ask(prompt);
+    }
+  });
+});
+
+/* Living Textured Green Plasma Brain (Canvas — Masked Brain Silhouette + Light Robotic Touch) */
+(function initPlasma(){
+  const canvas=$('#plasma');
+  if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  if(!ctx)return;
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=W*0.41;
+  const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const particles=Array.from({length:46},(_,i)=>({
+    angle:(i/46)*Math.PI*2,
+    dist:0.22+(i%7)*0.105,
+    speed:0.008+(i%5)*0.004,
+    size:1.2+(i%3)*0.9,
+    phase:i*0.7
+  }));
+
+  // Folded cortex gyri veins (left & right hemispheres + cerebellum + brain stem)
+  const FOLD_VEINS=[
+    // Right hemisphere cortex folds
+    [[0.08,-0.68],[0.26,-0.74],[0.42,-0.58],[0.54,-0.46]],
+    [[0.10,-0.44],[0.32,-0.54],[0.58,-0.42],[0.72,-0.24]],
+    [[0.12,-0.18],[0.38,-0.28],[0.64,-0.16],[0.80,0.04]],
+    [[0.14,0.10],[0.40,0.02],[0.64,0.18],[0.74,0.34]],
+    [[0.18,0.34],[0.38,0.28],[0.52,0.40],[0.46,0.50]],
+    // Left hemisphere cortex folds (mirrored)
+    [[-0.08,-0.68],[-0.26,-0.74],[-0.42,-0.58],[-0.54,-0.46]],
+    [[-0.10,-0.44],[-0.32,-0.54],[-0.58,-0.42],[-0.72,-0.24]],
+    [[-0.12,-0.18],[-0.38,-0.28],[-0.64,-0.16],[-0.80,0.04]],
+    [[-0.14,0.10],[-0.40,0.02],[-0.64,0.18],[-0.74,0.34]],
+    [[-0.18,0.34],[-0.38,0.28],[-0.52,0.40],[-0.46,0.50]],
+    // Cerebellum folds + brain stem nerve tract
+    [[0.14,0.62],[0.28,0.66],[0.34,0.72],[0.22,0.72]],
+    [[-0.14,0.62],[-0.28,0.66],[-0.34,0.72],[-0.22,0.72]],
+    [[0,0.56],[0.03,0.70],[-0.02,0.84],[0,0.94]]
+  ];
+
+  // Robotic rivets along brain silhouette & seam junctions
+  const RIVETS=[
+    [-0.11,-0.74],[0.11,-0.74],
+    [-0.70,-0.42],[0.70,-0.42],
+    [-0.66,0.42],[0.66,0.42],
+    [-0.11,0.76],[0.11,0.76]
+  ];
+
+  let t=0;
+  function frame(){
+    const st=document.body.dataset.s||'off';
+    const now=performance.now();
+    const wakeBoost=now<wakeFlashUntil?(wakeFlashUntil-now)/560:0;
+    const speed=st==='thinking'?0.055:st==='transcribing'?0.045:st==='speaking'?0.048:st==='listening'?0.032:0.014;
+    const pulseAmt=(st==='speaking'?0.07:st==='listening'?0.045:st==='transcribing'?0.04:st==='thinking'?0.035:0.018)+(wakeBoost*0.045);
+    t+=speed;
+    ctx.clearRect(0,0,W,H);
+
+    const breathe=1+Math.sin(t*1.8)*pulseAmt;
+    const curR=R*breathe;
+
+    const auraColor=st==='thinking'?'rgba(255,179,71,':st==='transcribing'?'rgba(108,229,255,':'rgba(53,255,140,';
+    const aura=ctx.createRadialGradient(cx,cy,curR*0.52,cx,cy,curR*1.28);
+    const auraAlpha=wakeBoost>0?Math.min(0.62,0.36+wakeBoost*0.32):(st==='speaking'?0.38:0.22);
+    aura.addColorStop(0,auraColor+auraAlpha+')');
+    aura.addColorStop(0.65,auraColor+'0.08)');
+    aura.addColorStop(1,'rgba(3,11,7,0)');
+    ctx.fillStyle=aura;
+    ctx.beginPath();
+    ctx.arc(cx,cy,curR*1.28,0,Math.PI*2);
+    ctx.fill();
+
+    // Subtle side connector ports (behind outline rim, matching brain temporal sides)
+    const portY=cy+curR*0.04;
+    const portW=curR*0.085,portH=curR*0.18;
+    const portGlow=st==='thinking'?'#ffb347':st==='transcribing'?'#6ce5ff':'#35ff8c';
+    for(const side of [-1,1]){
+      const px=cx+side*curR*0.89-(side<0?portW:0);
+      ctx.save();
+      ctx.fillStyle='rgba(8,24,16,0.92)';
+      ctx.strokeStyle='rgba(140,220,175,0.45)';
+      ctx.lineWidth=1.2;
+      ctx.beginPath();
+      if(typeof ctx.roundRect==='function')ctx.roundRect(px,portY-portH/2,portW,portH,3);
+      else ctx.rect(px,portY-portH/2,portW,portH);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle=portGlow;
+      ctx.globalAlpha=0.55+0.35*Math.sin(t*3+(side>0?0:1.5));
+      ctx.fillRect(px+(side>0?portW*0.35:portW*0.25),portY-portH*0.24,portW*0.4,portH*0.16);
+      ctx.fillRect(px+(side>0?portW*0.35:portW*0.25),portY+portH*0.08,portW*0.4,portH*0.16);
+      ctx.restore();
+    }
+
+    // Clip all living veins, folded cortex glow & sparkles strictly inside the Brain Silhouette
+    ctx.save();
+    traceBrainPath(ctx,cx,cy,curR);
+    ctx.clip();
+
+    const bodyGrad=ctx.createRadialGradient(
+      cx-curR*0.26+Math.cos(t)*6,
+      cy-curR*0.28+Math.sin(t)*6,
+      curR*0.08,
+      cx,cy,curR*1.04
+    );
+    if(st==='thinking'){
+      bodyGrad.addColorStop(0,'#fff0c2');
+      bodyGrad.addColorStop(0.28,'#45f59b');
+      bodyGrad.addColorStop(0.68,'#0a5932');
+      bodyGrad.addColorStop(1,'#03190d');
+    }else if(st==='transcribing'){
+      bodyGrad.addColorStop(0,'#d4f7ff');
+      bodyGrad.addColorStop(0.32,'#46d8ff');
+      bodyGrad.addColorStop(0.7,'#095866');
+      bodyGrad.addColorStop(1,'#02171d');
+    }else if(st==='speaking'){
+      bodyGrad.addColorStop(0,'#d4ffe8');
+      bodyGrad.addColorStop(0.32,'#35ff8c');
+      bodyGrad.addColorStop(0.7,'#096636');
+      bodyGrad.addColorStop(1,'#021d0f');
+    }else{
+      bodyGrad.addColorStop(0,'#9cffc9');
+      bodyGrad.addColorStop(0.3,'#1cd473');
+      bodyGrad.addColorStop(0.72,'#064a27');
+      bodyGrad.addColorStop(1,'#02170c');
+    }
+    ctx.fillStyle=bodyGrad;
+    ctx.fillRect(cx-curR*1.1,cy-curR*1.1,curR*2.2,curR*2.2);
+
+    // Living flowing plasma veins (preserved brightness & speed)
+    const veinColor=st==='thinking'
+      ?'rgba(255,204,112,0.34)'
+      :st==='transcribing'
+        ?'rgba(165,243,255,0.4)'
+        :st==='speaking'
+          ?'rgba(204,255,227,0.44)'
+          :'rgba(104,255,172,0.28)';
+    const veinWidth=st==='speaking'?2.2:1.5;
+
+    const veinCount=7;
+    for(let v=0;v<veinCount;v++){
+      ctx.beginPath();
+      const baseA=v*(Math.PI/veinCount)+t*(v%2===0?0.4:-0.35);
+      for(let s=-1;s<=1;s+=0.08){
+        const wave=Math.sin(s*4.2+t*2.4+v)*0.22*curR;
+        const px=cx+Math.cos(baseA)*(s*curR*0.92)-Math.sin(baseA)*wave;
+        const py=cy+Math.sin(baseA)*(s*curR*0.92)+Math.cos(baseA)*wave;
+        if(s===-1)ctx.moveTo(px,py);else ctx.lineTo(px,py);
+      }
+      ctx.strokeStyle=veinColor;
+      ctx.lineWidth=veinWidth;
+      ctx.stroke();
+    }
+
+    // Veins & travelling signals following the folded brain cortex gyri, cerebellum & stem
+    const signalColor=st==='thinking'
+      ?'rgba(255,232,168,0.92)'
+      :st==='transcribing'
+        ?'rgba(190,248,255,0.92)'
+        :'rgba(210,255,230,0.92)';
+    const foldStroke=st==='thinking'
+      ?'rgba(255,204,112,0.40)'
+      :st==='transcribing'
+        ?'rgba(155,240,255,0.44)'
+        :st==='speaking'
+          ?'rgba(185,255,218,0.52)'
+          :'rgba(98,255,168,0.36)';
+
+    for(let f=0;f<FOLD_VEINS.length;f++){
+      const seg=FOLD_VEINS[f];
+      const shim=Math.sin(t*1.9+f*0.8)*0.015;
+      const p0=[cx+seg[0][0]*curR,cy+(seg[0][1]+shim)*curR];
+      const p1=[cx+seg[1][0]*curR,cy+(seg[1][1]-shim)*curR];
+      const p2=[cx+seg[2][0]*curR,cy+(seg[2][1]+shim)*curR];
+      const p3=[cx+seg[3][0]*curR,cy+(seg[3][1]-shim)*curR];
+
+      // Subtle dark sulcus groove underneath each ridge for 3D brain fold depth
+      ctx.beginPath();
+      ctx.moveTo(p0[0],p0[1]+1.2);
+      ctx.bezierCurveTo(p1[0],p1[1]+1.2,p2[0],p2[1]+1.2,p3[0],p3[1]+1.2);
+      ctx.strokeStyle='rgba(2,14,8,0.42)';
+      ctx.lineWidth=2.6;
+      ctx.stroke();
+
+      // Glowing fold vein
+      ctx.beginPath();
+      ctx.moveTo(p0[0],p0[1]);
+      ctx.bezierCurveTo(p1[0],p1[1],p2[0],p2[1],p3[0],p3[1]);
+      ctx.strokeStyle=foldStroke;
+      ctx.lineWidth=st==='speaking'?1.9:1.4;
+      ctx.stroke();
+
+      // Signal pulse travelling along the folded vein
+      const u=(t*0.36+f*0.19)%1;
+      const sp=cubicPoint(p0,p1,p2,p3,u);
+      ctx.fillStyle=signalColor;
+      ctx.beginPath();
+      ctx.arc(sp[0],sp[1],st==='speaking'||wakeBoost>0?2.3:1.8,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    // Center hemisphere divide (longitudinal fissure) + subtle metal panel seams
+    ctx.strokeStyle='rgba(2,11,7,0.68)';
+    ctx.lineWidth=2.4;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy-curR*0.76);
+    ctx.quadraticCurveTo(cx+Math.sin(t*0.8)*1.5,cy-curR*0.08,cx,cy+curR*0.58);
+    ctx.stroke();
+
+    ctx.strokeStyle=st==='thinking'?'rgba(255,214,130,0.42)':'rgba(130,255,188,0.42)';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(cx,cy-curR*0.74);
+    ctx.lineTo(cx,cy+curR*0.56);
+    ctx.stroke();
+
+    // Light robotic panel seams (thin dark metal lines, translucent so veins shine through)
+    ctx.strokeStyle='rgba(3,12,8,0.52)';
+    ctx.lineWidth=1.1;
+    // Cerebellum collar seam
+    ctx.beginPath();
+    ctx.moveTo(cx-curR*0.38,cy+curR*0.56);
+    ctx.quadraticCurveTo(cx,cy+curR*0.64,cx+curR*0.38,cy+curR*0.56);
+    ctx.stroke();
+    // Upper cybernetic crown seams on left & right hemispheres
+    for(const side of [-1,1]){
+      ctx.beginPath();
+      ctx.moveTo(cx+side*curR*0.12,cy-curR*0.62);
+      ctx.quadraticCurveTo(cx+side*curR*0.48,cy-curR*0.58,cx+side*curR*0.70,cy-curR*0.36);
+      ctx.stroke();
+    }
+
+    // Sparkling particles (exact same sparkle animation inside brain)
+    particles.forEach(p=>{
+      p.angle+=p.speed*(st==='thinking'?2.6:st==='speaking'?2.1:st==='listening'?1.5:0.8);
+      const wobble=Math.sin(t*2+p.phase)*0.08;
+      const pr=curR*(p.dist+wobble);
+      const px=cx+Math.cos(p.angle)*pr;
+      const py=cy+Math.sin(p.angle*1.12)*pr*0.92;
+      ctx.fillStyle=st==='thinking'?'rgba(255,225,155,0.65)':'rgba(195,255,224,0.65)';
+      ctx.beginPath();
+      ctx.arc(px,py,p.size,0,Math.PI*2);
+      ctx.fill();
+    });
+
+    if(wakeBoost>0){
+      ctx.fillStyle='rgba(170,255,212,'+(wakeBoost*0.26).toFixed(3)+')';
+      ctx.fillRect(cx-curR*1.1,cy-curR*1.1,curR*2.2,curR*2.2);
+    }
+
+    // Inner dark metal bevel along brain edge
+    traceBrainPath(ctx,cx,cy,curR-0.8);
+    ctx.strokeStyle='rgba(3,13,8,0.58)';
+    ctx.lineWidth=2.6;
+    ctx.stroke();
+
+    ctx.restore();
+
+    // Soft metallic rim light around the brain silhouette outline
+    const rimGrad=ctx.createLinearGradient(cx-curR,cy-curR,cx+curR,cy+curR);
+    if(st==='thinking'){
+      rimGrad.addColorStop(0,'rgba(255,230,175,0.68)');
+      rimGrad.addColorStop(0.5,'rgba(170,210,185,0.34)');
+      rimGrad.addColorStop(1,'rgba(255,190,90,0.55)');
+    }else if(st==='transcribing'){
+      rimGrad.addColorStop(0,'rgba(200,248,255,0.68)');
+      rimGrad.addColorStop(0.5,'rgba(130,210,225,0.34)');
+      rimGrad.addColorStop(1,'rgba(90,225,255,0.55)');
+    }else{
+      rimGrad.addColorStop(0,'rgba(205,255,228,0.64)');
+      rimGrad.addColorStop(0.5,'rgba(120,195,158,0.32)');
+      rimGrad.addColorStop(1,'rgba(90,255,165,0.54)');
+    }
+    traceBrainPath(ctx,cx,cy,curR);
+    ctx.strokeStyle=rimGrad;
+    ctx.lineWidth=1.8;
+    ctx.stroke();
+
+    // Small metallic rivets along the outline & seam junctions
+    for(const rv of RIVETS){
+      const rx=cx+rv[0]*curR,ry=cy+rv[1]*curR;
+      ctx.fillStyle='rgba(4,16,10,0.88)';
+      ctx.beginPath();
+      ctx.arc(rx,ry,2.1,0,Math.PI*2);
+      ctx.fill();
+      ctx.fillStyle='rgba(195,255,225,0.72)';
+      ctx.beginPath();
+      ctx.arc(rx-0.4,ry-0.4,0.85,0,Math.PI*2);
+      ctx.fill();
+    }
+
+    if(!reduced)requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+/* Reliable Voice Pipeline: Session-Guarded Web Speech + Adaptive Audio VAD + Strict State Machine */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let voiceSessionId=0;
+let rec=null;
+let restartTimer=null;
+let silenceTimer=null;
+let speechEndTimer=null;
+let srRefreshTimer=null;
+let errRetryCount=0;
+let autoMediaRec=null;
+let autoStream=null;
+let autoAudioCtx=null;
+let autoMonitorRaf=null;
+let micPermissionVerified=false;
+let lastSubmittedCmd={text:'',ts:0};
+let activeAskPromise=null;
+
+const WAKE_RE=/^(?:.*?\b(?:hey|hi|hello|ok)?\s*(?:chintu|chinto|shintu|jintu|tintu)\b|.*?(?:হে|হেই|এই|হ্যালো|ও)?\s*(?:চিন্টু|চিনটু|চিনতু|চিংটু|ছিন্টু|সিন্টু|শিন্টু|ঝিন্টু|টিন্টু))[\s,।!?:-]*(.*)$/i;
+const STOP_RE=/^(?:stop(?:\s+(?:it|talking|listening|now))?|goodbye|bye|চিন্টু\s*(?:থামো|থামুন|বন্ধ\s*করো?)|বন্ধ\s*করো?|থামো|থামুন)[\s।!,.]*$/i;
+
+function clearSpeechEndTimer(){
+  if(speechEndTimer){clearTimeout(speechEndTimer);speechEndTimer=null}
+}
+function clearSrRefreshTimer(){
+  if(srRefreshTimer){clearTimeout(srRefreshTimer);srRefreshTimer=null}
+}
+function clearSilenceTimer(){
+  if(silenceTimer){clearTimeout(silenceTimer);silenceTimer=null}
+}
+function armSilenceTimer(){
+  clearSilenceTimer();
+  if(!S.activated||!S.inConv||S.busy)return;
+  silenceTimer=setTimeout(()=>{
+    if(!S.activated||!S.inConv||S.busy)return;
+    S.inConv=false;
+    diagLog('TIMEOUT_RECOVERY','Conversation idle ('+Math.round(TIMEOUTS.conversationIdleMs/1000)+'s) -> STANDBY','warn');
+    pauseRecognition();
+    setState('standby','Standby · ৩০ সেকেন্ড নীরব থাকায় স্ট্যান্ডবাই মোডে গেলাম। "হে চিন্টু" বলুন।');
+    scheduleRestart(220);
+  },TIMEOUTS.conversationIdleMs);
+}
+
+function pauseAutoCapture(){
+  if(autoMonitorRaf){cancelAnimationFrame(autoMonitorRaf);autoMonitorRaf=null}
+  if(autoMediaRec){
+    try{
+      autoMediaRec.ondataavailable=null;
+      autoMediaRec.onstop=null;
+      autoMediaRec.onerror=null;
+      if(autoMediaRec.state!=='inactive')autoMediaRec.stop();
+    }catch(e){}
+    autoMediaRec=null;
+  }
+  if(autoStream){
+    try{autoStream.getTracks().forEach(t=>t.stop())}catch(e){}
+    autoStream=null;
+  }
+  if(autoAudioCtx){
+    try{autoAudioCtx.close()}catch(e){}
+    autoAudioCtx=null;
+  }
+}
+
+function pauseRecognition(){
+  voiceSessionId++;
+  if(restartTimer){clearTimeout(restartTimer);restartTimer=null}
+  clearSpeechEndTimer();
+  clearSrRefreshTimer();
+  pauseAutoCapture();
+  if(rec){
+    try{
+      rec.onstart=null;
+      rec.onaudiostart=null;
+      rec.onspeechstart=null;
+      rec.onend=null;
+      rec.onerror=null;
+      rec.onresult=null;
+      rec.abort();
+    }catch(e){}
+    rec=null;
+  }
+}
+
+function scheduleRestart(delayMs){
+  if(restartTimer){clearTimeout(restartTimer);restartTimer=null}
+  if(!S.activated||S.busy)return;
+  restartTimer=setTimeout(()=>{
+    restartTimer=null;
+    if(S.activated&&!S.busy)startListeningLoop();
+  },delayMs);
+}
+
+async function checkAndWarmMicPermission(needsStreamAfter){
+  let permState='unknown';
+  try{
+    if(navigator.permissions&&navigator.permissions.query){
+      const status=await navigator.permissions.query({name:'microphone'});
+      permState=status.state;
+      diagLog('PERMISSION','microphone='+permState);
+      if(permState==='denied'){
+        return {ok:false,denied:true,permState};
+      }
+    }
+  }catch(e){
+    diagLog('PERMISSION','Permissions API unavailable ('+(e&&e.message?e.message:'unsupported')+')');
+  }
+
+  if(!micPermissionVerified&&!needsStreamAfter&&permState!=='granted'&&navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+    try{
+      diagLog('MIC_INIT','Requesting browser mic permission probe');
+      const probe=await navigator.mediaDevices.getUserMedia({audio:true});
+      probe.getTracks().forEach(t=>t.stop());
+      micPermissionVerified=true;
+      diagLog('PERMISSION','Microphone probe granted & stream cleanly released','ok');
+      await new Promise(r=>setTimeout(r,160));
+    }catch(e){
+      const denied=e&&(e.name==='NotAllowedError'||e.name==='PermissionDeniedError');
+      diagLog('MIC_INIT','Mic probe failed: '+(e&&e.name?e.name:e),'err');
+      if(denied)return {ok:false,denied:true,permState:'denied'};
+      if(e&&(e.name==='NotFoundError'||e.name==='DevicesNotFoundError')){
+        return {ok:false,noDevice:true,permState:'no-device'};
+      }
+    }
+  }else if(permState==='granted'){
+    micPermissionVerified=true;
+  }
+  return {ok:true,permState};
+}
+
+function blobToBase64(blob){
+  return new Promise((res,rej)=>{
+    const reader=new FileReader();
+    reader.onloadend=()=>{
+      const out=typeof reader.result==='string'?reader.result:'';
+      const idx=out.indexOf(',');
+      res(idx>=0?out.slice(idx+1):out);
+    };
+    reader.onerror=()=>rej(new Error('অডিও পড়তে সমস্যা হয়েছে।'));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function transcribeWithGeminiAudio(blob,mimeType){
+  S.busy=true;
+  clearSilenceTimer();
+  pauseRecognition();
+  setState('transcribing','Transcribing · Auto অডিও লেখা হচ্ছে…');
+  diagLog('AI_REQ','POST /api/transcribe ('+blob.size+' bytes, '+mimeType+')');
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),TIMEOUTS.transcribeTimeoutMs);
+  try{
+    const audioBase64=await blobToBase64(blob);
+    const timeZone=Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const r=await fetch('/api/transcribe',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({audioBase64,mimeType,timeZone}),
+      signal:ctrl.signal
+    });
+    const raw=await r.text();
+    let j={};
+    try{j=raw?JSON.parse(raw):{}}catch(e){}
+    if(typeof j.apiCallsMade==='number'&&j.apiCallsMade>0){
+      addRequestCount('listen',j.apiCallsMade);
+    }
+    if(!r.ok){
+      throw new Error(j.error||('অডিও ট্রান্সক্রিপশন ত্রুটি (HTTP '+r.status+')'));
+    }
+    const text=(j.text||'').trim();
+    diagLog('TRANSCRIPT',text?('"'+text+'"'):'(empty transcription)',text?'ok':'warn');
+    S.busy=false;
+    if(!text){
+      setState(S.activated?(S.inConv?'listening':'standby'):'off','স্পষ্ট কথা বোঝা যায়নি — আবার বলুন স্যার');
+      if(S.activated)scheduleRestart(180);
+      return;
+    }
+    await handleSpokenText(text);
+  }catch(e){
+    S.busy=false;
+    let msg=e&&e.message?e.message:'অডিও বুঝতে সমস্যা হয়েছে।';
+    if(e&&e.name==='AbortError'){
+      msg='অডিও ট্রান্সক্রিপশনের নেটওয়ার্ক সময়সীমা ('+Math.round(TIMEOUTS.transcribeTimeoutMs/1000)+' সে.) শেষ হয়েছে।';
+      diagLog('TIMEOUT_RECOVERY','Transcribe aborted -> '+msg,'err');
+    }else{
+      diagLog('SR_ERROR','Transcribe failed: '+msg,'err');
+    }
+    setState(S.activated?(S.inConv?'listening':'standby'):'off','ত্রুটি: '+msg,true);
+    if(S.activated)scheduleRestart(1400);
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+async function startAutoAudioCapture(sid){
+  if(!S.activated||S.busy||!S.inConv||sid!==voiceSessionId)return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia||typeof MediaRecorder==='undefined'){
+    diagLog('MIC_INIT','MediaRecorder/getUserMedia unsupported','err');
+    setState('listening','এই ব্রাউজারে Auto অডিও রেকর্ডিং নেই — বাংলা বা English মোড ব্যবহার করুন।',true);
+    return;
+  }
+  try{
+    diagLog('MIC_INIT','Opening getUserMedia stream for Auto mode');
+    const stream=await navigator.mediaDevices.getUserMedia({
+      audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
+    });
+    if(!S.activated||S.busy||!S.inConv||sid!==voiceSessionId){
+      stream.getTracks().forEach(t=>t.stop());
+      return;
+    }
+    micPermissionVerified=true;
+    autoStream=stream;
+    const AC=window.AudioContext||window.webkitAudioContext;
+    autoAudioCtx=new AC();
+    if(autoAudioCtx.state==='suspended'){
+      await autoAudioCtx.resume();
+    }
+    const src=autoAudioCtx.createMediaStreamSource(stream);
+    const analyser=autoAudioCtx.createAnalyser();
+    analyser.fftSize=512;
+    src.connect(analyser);
+    const buf=new Float32Array(analyser.fftSize);
+
+    const mime=['audio/webm;codecs=opus','audio/webm','audio/ogg;codecs=opus','audio/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||'';
+    autoMediaRec=mime?new MediaRecorder(stream,{mimeType:mime}):new MediaRecorder(stream);
+    const chunks=[];
+    let speechHeard=false;
+    let lastSoundAt=Date.now();
+    const startedAt=Date.now();
+    let noiseSamples=0;
+    let noiseAccum=0;
+    let noiseFloor=0.008;
+
+    autoMediaRec.ondataavailable=ev=>{if(ev.data&&ev.data.size>0)chunks.push(ev.data)};
+    autoMediaRec.onerror=ev=>{
+      diagLog('SR_ERROR','MediaRecorder error: '+(ev&&ev.error?ev.error.name:'unknown'),'err');
+      pauseAutoCapture();
+      if(S.activated&&!S.busy&&sid===voiceSessionId)scheduleRestart(800);
+    };
+    autoMediaRec.onstop=()=>{
+      if(sid!==voiceSessionId)return;
+      const actualMime=(autoMediaRec&&autoMediaRec.mimeType)||mime||'audio/webm';
+      pauseAutoCapture();
+      if(!S.activated||S.busy||!S.inConv)return;
+      if(!speechHeard||chunks.length===0){
+        scheduleRestart(180);
+        return;
+      }
+      const blob=new Blob(chunks,{type:actualMime});
+      if(blob.size<900){
+        scheduleRestart(180);
+        return;
+      }
+      transcribeWithGeminiAudio(blob,actualMime);
+    };
+
+    autoMediaRec.start(250);
+    diagLog('SR_START','Auto MediaRecorder started ('+(mime||'default')+')','ok');
+    setState('listening','Listening (Auto) · বাংলা, Banglish বা ইংরেজিতে বলুন স্যার…');
+    armSilenceTimer();
+
+    const checkVad=()=>{
+      if(sid!==voiceSessionId||!autoMediaRec||autoMediaRec.state!=='recording'||!S.activated||S.busy||!S.inConv)return;
+      analyser.getFloatTimeDomainData(buf);
+      let sum=0;
+      let peak=0;
+      for(let i=0;i<buf.length;i++){
+        const v=Math.abs(buf[i]);
+        if(v>peak)peak=v;
+        sum+=buf[i]*buf[i];
+      }
+      const rms=Math.sqrt(sum/buf.length);
+      const now=Date.now();
+      if(now-startedAt<350){
+        noiseAccum+=rms;
+        noiseSamples++;
+        noiseFloor=Math.min(0.03,noiseAccum/Math.max(1,noiseSamples));
+      }
+      const triggerRms=Math.max(0.011,noiseFloor*2.3);
+      if(rms>triggerRms||peak>0.038){
+        if(!speechHeard){
+          speechHeard=true;
+          diagLog('AUDIO_DETECTED','rms='+rms.toFixed(4)+' floor='+noiseFloor.toFixed(4),'ok');
+        }
+        lastSoundAt=now;
+        armSilenceTimer();
+      }
+      if((speechHeard&&now-lastSoundAt>1300)||(now-startedAt>18000)){
+        try{autoMediaRec.stop()}catch(e){}
+        return;
+      }
+      autoMonitorRaf=requestAnimationFrame(checkVad);
+    };
+    autoMonitorRaf=requestAnimationFrame(checkVad);
+  }catch(e){
+    pauseAutoCapture();
+    const denied=e&&(e.name==='NotAllowedError'||e.name==='PermissionDeniedError');
+    diagLog('SR_ERROR','Auto capture error: '+(e&&e.message?e.message:e),'err');
+    if(denied){
+      S.activated=false;
+      S.inConv=false;
+      clearSilenceTimer();
+      setState('off','মাইক্রোফোনের অনুমতি বন্ধ আছে। ব্রাউজার সেটিংস থেকে অনুমতি দিন।',true);
+      return;
+    }
+    setState('listening','Auto অডিও চালু করা যায়নি: '+(e&&e.message?e.message:'অজানা ত্রুটি'),true);
+    scheduleRestart(1500);
+  }
+}
+
+async function startListeningLoop(){
+  if(!S.activated||S.busy)return;
+  if(!navigator.onLine){
+    diagLog('SR_ERROR','Browser reports offline','warn');
+    setState(S.inConv?'listening':'standby','ইন্টারনেট সংযোগ নেই। সংযোগ ফিরে এলে ভয়েস আবার চালু হবে।',true);
+    scheduleRestart(3000);
+    return;
+  }
+
+  pauseRecognition();
+  const sid=voiceSessionId;
+  const useAutoCapture=(S.lang==='auto'&&S.inConv);
+  const perm=await checkAndWarmMicPermission(useAutoCapture);
+  if(sid!==voiceSessionId||!S.activated||S.busy)return;
+
+  if(!perm.ok){
+    S.activated=false;
+    S.inConv=false;
+    clearSilenceTimer();
+    if(perm.noDevice){
+      setState('off','কোনো মাইক্রোফোন পাওয়া যায়নি। ডিভাইস সংযোগ পরীক্ষা করুন।',true);
+    }else{
+      setState('off','মাইক্রোফোনের অনুমতি বন্ধ আছে। ব্রাউজারের ঠিকানার পাশের তালা/মাইক চিহ্ন থেকে অনুমতি চালু করুন।',true);
+    }
+    return;
+  }
+
+  if(useAutoCapture){
+    startAutoAudioCapture(sid);
+    return;
+  }
+
+  if(!SR){
+    S.activated=false;
+    diagLog('SR_ERROR','Web Speech API unavailable in this browser','err');
+    setState('off','এই ব্রাউজারে ফ্রি SpeechRecognition সাপোর্ট নেই। Chrome ব্যবহার করুন, সেটিংস থেকে Auto (Gemini Audio) চালু করুন, অথবা নিচে লিখুন।',true);
+    return;
+  }
+
+  try{
+    rec=new SR();
+    rec.lang=S.lang==='auto'?'bn-BD':S.lang;
+    rec.interimResults=true;
+    rec.continuous=true;
+    rec.maxAlternatives=3;
+  }catch(e){
+    diagLog('SR_ERROR','SR constructor failed: '+(e&&e.message?e.message:e),'err');
+    setState('off','ভয়েস ইঞ্জিন চালু করা যায়নি: '+(e&&e.message?e.message:'অজানা ত্রুটি'),true);
+    S.activated=false;
+    return;
+  }
+
+  let finalText='';
+  let lastText='';
+  let allAlts=[];
+  let fatal=false;
+  let audioLogged=false;
+  let handledByEnd=false;
+
+  const finalizeSpeechNow=()=>{
+    clearSpeechEndTimer();
+    clearSrRefreshTimer();
+    if(sid!==voiceSessionId||handledByEnd)return;
+    const spoken=(finalText||lastText).trim();
+    if(!spoken)return;
+    handledByEnd=true;
+    diagLog('TRANSCRIPT','Speech finalized: "'+spoken+'"','ok');
+    pauseRecognition();
+    handleSpokenText(spoken,allAlts);
+  };
+
+  rec.onstart=()=>{
+    if(sid!==voiceSessionId)return;
+    errRetryCount=0;
+    diagLog('SR_START','Web Speech API started (lang='+rec.lang+', inConv='+S.inConv+')','ok');
+    if(S.inConv){
+      setState('listening','Listening · কথা বলুন স্যার, শুনছি…');
+      armSilenceTimer();
+    }else{
+      setState('standby','Standby · "চিন্টু", "হে চিন্টু" বা "Hey Chintu" বলুন');
+    }
+    clearSrRefreshTimer();
+    srRefreshTimer=setTimeout(()=>{
+      if(sid!==voiceSessionId||handledByEnd||!S.activated||S.busy)return;
+      if(!(finalText||lastText).trim()){
+        diagLog('TIMEOUT_RECOVERY','Refreshing continuous SR after '+Math.round(TIMEOUTS.noSpeechRefreshMs/1000)+'s silence');
+        try{rec&&rec.stop()}catch(e){}
+      }
+    },TIMEOUTS.noSpeechRefreshMs);
+  };
+
+  rec.onaudiostart=()=>{
+    if(sid!==voiceSessionId)return;
+    diagLog('MIC_INIT','Audio capture active on microphone');
+  };
+
+  rec.onspeechstart=()=>{
+    if(sid!==voiceSessionId)return;
+    if(!audioLogged){
+      audioLogged=true;
+      diagLog('AUDIO_DETECTED','Speech sound detected on microphone','ok');
+    }
+    armSilenceTimer();
+  };
+
+  rec.onresult=e=>{
+    if(sid!==voiceSessionId||handledByEnd)return;
+    if(!audioLogged){
+      audioLogged=true;
+      diagLog('AUDIO_DETECTED','Speech audio recognized','ok');
+    }
+    let finalized='';
+    let interim='';
+    const alts=[];
+    for(let i=0;i<e.results.length;i++){
+      const r=e.results[i];
+      if(!r||!r[0])continue;
+      const t=r[0].transcript||'';
+      if(r.isFinal){
+        finalized+=(finalized?' ':'')+t.trim();
+      }else{
+        interim+=(interim?' ':'')+t.trim();
+      }
+      for(let a=0;a<r.length;a++){
+        if(r[a]&&r[a].transcript)alts.push(r[a].transcript.trim());
+      }
+    }
+    if(finalized.trim())finalText=finalized.trim();
+    lastText=(finalText+(interim?' '+interim:'')).trim();
+    if(alts.length)allAlts=alts;
+
+    if(lastText){
+      if(STOP_RE.test(lastText)){
+        finalizeSpeechNow();
+        return;
+      }
+      if(S.inConv){
+        $('#you').textContent=lastText;
+        armSilenceTimer();
+      }else{
+        $('#you').textContent='শোনা গেছে: '+lastText;
+        if(WAKE_RE.test(lastText)&&finalText){
+          finalizeSpeechNow();
+          return;
+        }
+      }
+      clearSpeechEndTimer();
+      speechEndTimer=setTimeout(finalizeSpeechNow,TIMEOUTS.speechEndMs);
+    }
+  };
+
+  rec.onerror=e=>{
+    if(sid!==voiceSessionId)return;
+    clearSpeechEndTimer();
+    clearSrRefreshTimer();
+    if(e.error==='no-speech'||e.error==='aborted')return;
+    diagLog('SR_ERROR','Web Speech error: '+e.error,'err');
+    if(e.error==='not-allowed'||e.error==='service-not-allowed'){
+      fatal=true;
+      S.activated=false;
+      S.inConv=false;
+      clearSilenceTimer();
+      const msg=e.error==='not-allowed'
+        ?'মাইক্রোফোনের অনুমতি বন্ধ আছে। ব্রাউজারের ঠিকানার পাশের তালা/মাইক চিহ্ন থেকে অনুমতি চালু করুন।'
+        :'এই ব্রাউজারে ফ্রি ভয়েস সার্ভিস চালু হচ্ছে না। Chrome ব্যবহার করুন বা সেটিংস থেকে Auto মোড চালু করুন।';
+      setState('off',msg,true);
+      return;
+    }
+    if(e.error==='audio-capture'){
+      fatal=true;
+      S.activated=false;
+      S.inConv=false;
+      clearSilenceTimer();
+      setState('off','কোনো মাইক্রোফোন পাওয়া যায়নি। মাইক্রোফোন সংযোগ পরীক্ষা করুন।',true);
+      return;
+    }
+    if(e.error==='language-not-supported'){
+      fatal=true;
+      S.activated=false;
+      S.inConv=false;
+      setState('off','নির্বাচিত ভাষা এই ডিভাইসে সমর্থিত নয়। সেটিংস থেকে ভাষা বদলান।',true);
+      return;
+    }
+    if(e.error==='network'){
+      errRetryCount++;
+      setState(
+        S.inConv?'listening':'standby',
+        navigator.onLine
+          ?(errRetryCount>=3
+            ?'ব্রাউজার ভয়েস সার্ভারে সংযোগ হচ্ছে না। সেটিংস থেকে Auto মোড চেষ্টা করুন বা নিচে লিখুন।'
+            :'ভয়েস চেনার সার্ভারে সংযোগ সমস্যা হচ্ছে। আবার চেষ্টা করছি…')
+          :'ইন্টারনেট সংযোগ নেই। সংযোগ পেলে আবার শুনব।',
+        true
+      );
+      return;
+    }
+    errRetryCount++;
+    setState(S.inConv?'listening':'standby','ভয়েস ত্রুটি: '+e.error+' — আবার চেষ্টা করছি…',true);
+  };
+
+  rec.onend=()=>{
+    if(sid!==voiceSessionId)return;
+    clearSpeechEndTimer();
+    clearSrRefreshTimer();
+    rec=null;
+    if(fatal||handledByEnd||!S.activated||S.busy)return;
+    const spoken=(finalText||lastText).trim();
+    if(spoken){
+      handledByEnd=true;
+      diagLog('TRANSCRIPT','Speech captured on end: "'+spoken+'"','ok');
+      handleSpokenText(spoken,allAlts);
+      return;
+    }
+    const backoff=errRetryCount>0?Math.min(4000,700*errRetryCount):180;
+    if(errRetryCount>0){
+      diagLog('TIMEOUT_RECOVERY','Scheduling SR retry in '+backoff+'ms (attempt '+errRetryCount+')','warn');
+    }
+    scheduleRestart(backoff);
+  };
+
+  try{
+    rec.start();
+  }catch(e){
+    diagLog('SR_ERROR','rec.start() exception: '+(e&&e.message?e.message:e),'err');
+    scheduleRestart(600);
+  }
+}
+
+async function handleSpokenText(spoken,alts){
+  if(STOP_RE.test(spoken)){
+    clearSilenceTimer();
+    S.inConv=false;
+    S.busy=false;
+    pauseRecognition();
+    stopSpeaking();
+    $('#you').textContent=spoken;
+    $('#sub').textContent='ঠিক আছে স্যার, আমি অপেক্ষায় রইলাম। ডাকলেই আসব।';
+    setState('standby','Standby · কথোপকথন শেষ হয়েছে। আবার ডাকতে "হে চিন্টু" বলুন।');
+    scheduleRestart(220);
+    return;
+  }
+
+  if(!S.inConv){
+    let m=spoken.match(WAKE_RE);
+    if(!m&&Array.isArray(alts)){
+      for(const alt of alts){
+        const altMatch=String(alt).match(WAKE_RE);
+        if(altMatch){m=altMatch;break}
+      }
+    }
+    if(!m){
+      $('#you').textContent='শোনা গেছে: "'+spoken+'" — ডাকতে "হে চিন্টু" বলুন';
+      scheduleRestart(180);
+      return;
+    }
+    S.inConv=true;
+    triggerWakeFlash();
+    const cmd=(m[1]||'').trim();
+    $('#you').textContent=spoken;
+    if(cmd){
+      await ask(cmd);
+      return;
+    }
+    S.busy=true;
+    clearSilenceTimer();
+    pauseRecognition();
+    const ack=S.lang==='en-US'?'Yes Sir, I am listening.':'জি স্যার, বলুন। আমি শুনছি।';
+    $('#sub').textContent=ack;
+    setState('speaking','Speaking · চিন্টু বলছে…');
+    await speak(ack);
+    S.busy=false;
+    if(S.activated){
+      startListeningLoop();
+    }else{
+      setState('off','অপেক্ষায় — Activate Chintu চাপুন');
+    }
+    return;
+  }
+
+  await ask(spoken);
+}
+
+let currentTtsAudio=null;
+let currentTtsUrl=null;
+let currentTtsFetchCtrl=null;
+
+function stopSpeaking(){
+  if(currentTtsFetchCtrl){
+    try{currentTtsFetchCtrl.abort()}catch(e){}
+    currentTtsFetchCtrl=null;
+  }
+  if(currentTtsAudio){
+    try{
+      currentTtsAudio.onended=null;
+      currentTtsAudio.onerror=null;
+      currentTtsAudio.pause();
+      currentTtsAudio.src='';
+    }catch(e){}
+    currentTtsAudio=null;
+  }
+  if(currentTtsUrl){
+    try{URL.revokeObjectURL(currentTtsUrl)}catch(e){}
+    currentTtsUrl=null;
+  }
+  try{if('speechSynthesis' in window)speechSynthesis.cancel()}catch(e){}
+}
+
+function speakBrowserFallback(cleanText){
+  return new Promise(res=>{
+    let done=false;
+    let keepAlive=null;
+    const finish=(reason)=>{
+      if(done)return;
+      done=true;
+      clearTimeout(tmo);
+      if(keepAlive){clearInterval(keepAlive);keepAlive=null}
+      diagLog('TTS_END','Browser TTS finished ('+(reason||'ok')+')');
+      res();
+    };
+    const maxMs=Math.max(TIMEOUTS.ttsGuardMinMs,cleanText.length*220);
+    const tmo=setTimeout(()=>finish('watchdog-timeout'),maxMs);
+    try{
+      if(!('speechSynthesis' in window)){finish('no-tts');return}
+      speechSynthesis.cancel();
+      const u=new SpeechSynthesisUtterance(cleanText);
+      const bn=/[\u0980-\u09FF]/.test(cleanText),pre=bn?'bn':'en';
+      u.lang=bn?'bn-BD':'en-US';
+      u.rate=.97;
+      u.pitch=1.10;
+      const voices=speechSynthesis.getVoices();
+      const v=voices.find(v=>v.lang.toLowerCase().replace('_','-').startsWith(pre));
+      if(v)u.voice=v;
+      u.onstart=()=>{diagLog('TTS_START','engine=browser, lang='+u.lang+', rate=0.97, pitch=1.10')};
+      u.onend=()=>finish('onend');
+      u.onerror=ev=>finish('onerror:'+(ev&&ev.error?ev.error:'unknown'));
+      keepAlive=setInterval(()=>{
+        try{if(speechSynthesis.speaking&&speechSynthesis.paused)speechSynthesis.resume()}catch(e){}
+      },3500);
+      speechSynthesis.speak(u);
+    }catch(e){finish('exception')}
+  });
+}
+
+const ttsMemCache=new Map();
+
+function loadTtsPersistCache(){
+  try{
+    const arr=JSON.parse(ls.get('z_tts_cache')||'[]');
+    if(Array.isArray(arr)){
+      for(const it of arr){
+        if(it&&typeof it.k==='string'&&typeof it.b64==='string'){
+          ttsMemCache.set(it.k,{b64:it.b64,mime:it.mime||'audio/wav'});
+        }
+      }
+    }
+  }catch(e){}
+}
+loadTtsPersistCache();
+
+function saveTtsCacheEntry(key,b64,mime){
+  if(!b64)return;
+  if(ttsMemCache.size>=24){
+    const oldest=ttsMemCache.keys().next().value;
+    if(oldest)ttsMemCache.delete(oldest);
+  }
+  ttsMemCache.set(key,{b64,mime:mime||'audio/wav'});
+  if(b64.length<=450000){
+    try{
+      const entries=[];
+      for(const [k,v] of ttsMemCache.entries()){
+        if(v.b64.length<=450000)entries.push({k,b64:v.b64,mime:v.mime});
+      }
+      ls.set('z_tts_cache',JSON.stringify(entries.slice(-8)));
+    }catch(e){}
+  }
+}
+
+function playWavBase64(b64,mime,cleanText,sourceTag){
+  const binStr=atob(b64);
+  const bytes=new Uint8Array(binStr.length);
+  for(let i=0;i<binStr.length;i++)bytes[i]=binStr.charCodeAt(i);
+  const blob=new Blob([bytes],{type:mime||'audio/wav'});
+  const url=URL.createObjectURL(blob);
+  currentTtsUrl=url;
+
+  return new Promise(res=>{
+    let done=false;
+    const audio=new Audio(url);
+    currentTtsAudio=audio;
+    audio.playbackRate=0.98;
+    const safety=setTimeout(()=>finish('audio-watchdog'),Math.max(16000,cleanText.length*280));
+    const finish=(reason)=>{
+      if(done)return;
+      done=true;
+      clearTimeout(safety);
+      if(currentTtsAudio===audio)currentTtsAudio=null;
+      if(currentTtsUrl===url){try{URL.revokeObjectURL(url)}catch(e){}currentTtsUrl=null}
+      diagLog('TTS_END',sourceTag+' finished ('+(reason||'ok')+')');
+      res();
+    };
+    audio.onended=()=>finish('onend');
+    audio.onerror=()=>finish('audio-error');
+    diagLog('TTS_START',sourceTag+', rate=0.98','ok');
+    audio.play().catch(playErr=>{
+      diagLog('TTS_END','Audio.play blocked ('+(playErr&&playErr.message?playErr.message:playErr)+') -> fallback','warn');
+      finish('play-blocked');
+      speakBrowserFallback(cleanText).then(res);
+    });
+  });
+}
+
+async function speak(t){
+  const cleanText=String(t||'').replace(/[*#_`]/g,'').trim();
+  if(!cleanText)return;
+  stopSpeaking();
+
+  const cacheKey=cleanText.toLowerCase();
+  const cached=ttsMemCache.get(cacheKey);
+  if(cached){
+    diagLog('TTS_START','TTS cache hit (0 Gemini requests)','ok');
+    await playWavBase64(cached.b64,cached.mime,cleanText,'engine=gemini-tts-cache');
+    return;
+  }
+
+  if(S.ttsMode==='gemini'&&navigator.onLine){
+    const ctrl=new AbortController();
+    currentTtsFetchCtrl=ctrl;
+    const tmo=setTimeout(()=>ctrl.abort(),15000);
+    try{
+      diagLog('AI_REQ','POST /api/tts (single call, len='+cleanText.length+')');
+      const r=await fetch('/api/tts',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({text:cleanText,lang:S.lang,timeZone:TimeService.getSystemTimeZone()}),
+        signal:ctrl.signal
+      });
+      const raw=await r.text();
+      let j={};
+      try{j=raw?JSON.parse(raw):{}}catch(e){}
+      if(typeof j.apiCallsMade==='number'&&j.apiCallsMade>0){
+        addRequestCount('voice',j.apiCallsMade);
+      }
+      if(r.status===429){
+        maybeTriggerQuota80(true);
+        updateBrainCard();
+        throw new Error(j.error||'Gemini TTS কোটা পূর্ণ (429)');
+      }
+      if(!r.ok||!j.audioBase64){
+        throw new Error(j.error||('TTS HTTP '+r.status));
+      }
+      if(ctrl.signal.aborted)return;
+      saveTtsCacheEntry(cacheKey,j.audioBase64,j.mimeType||'audio/wav');
+      await playWavBase64(
+        j.audioBase64,
+        j.mimeType||'audio/wav',
+        cleanText,
+        'engine='+(j.modelUsed||'gemini-3.8-flash-lite-tts')+', voice='+(j.voiceName||'Puck')+(j.cached?' (server-cache)':'')
+      );
+      return;
+    }catch(e){
+      if(ctrl.signal.aborted){return}
+      diagLog('TIMEOUT_RECOVERY','Gemini TTS fallback -> browser speech ('+(e&&e.message?e.message:e)+')','warn');
+    }finally{
+      clearTimeout(tmo);
+      if(currentTtsFetchCtrl===ctrl)currentTtsFetchCtrl=null;
+    }
+  }
+  await speakBrowserFallback(cleanText);
+}
+
+async function ask(text){
+  const clean=text.trim();
+  if(!clean)return;
+
+  if(STOP_RE.test(clean)){
+    clearSilenceTimer();
+    S.inConv=false;
+    S.busy=false;
+    pauseRecognition();
+    stopSpeaking();
+    $('#you').textContent=clean;
+    $('#sub').textContent='ঠিক আছে স্যার, আমি অপেক্ষায় রইলাম। ডাকলেই আসব।';
+    if(S.activated){
+      setState('standby','Standby · "হে চিন্টু" বলুন');
+      scheduleRestart(220);
+    }else{
+      setState('off','অপেক্ষায় — Activate Chintu চাপুন');
+    }
+    return;
+  }
+
+  // Prevent duplicate submission of identical spoken commands within 3.5s or concurrent calls
+  const norm=clean.toLowerCase().replace(/[\s।,.!?]+/g,' ').trim();
+  if(activeAskPromise){
+    diagLog('DUPLICATE_IGNORED','Request already in flight; ignored "'+clean+'"','warn');
+    return;
+  }
+  if(lastSubmittedCmd.text===norm&&Date.now()-lastSubmittedCmd.ts<3500){
+    diagLog('DUPLICATE_IGNORED','Duplicate command within 3.5s ignored: "'+clean+'"','warn');
+    if(S.activated&&!S.busy)scheduleRestart(200);
+    return;
+  }
+  lastSubmittedCmd={text:norm,ts:Date.now()};
+
+  $('#you').textContent=clean;
+
+  // 0. Local Safety Confirmation / Disambiguation / Quick-Number Handler (0 Gemini chat requests)
+  if(S.pendingAction){
+    const pa=S.pendingAction;
+    if(pa.stage==='execute'){
+      S.pendingAction=null;
+      renderActionCard();
+    }else{
+      const lowerClean=clean.normalize('NFC').toLowerCase().replace(/[।,.!?]+$/g,'').trim();
+      const cancelRe=/^(?:না|থাক|বাতিল|বাদ দাও|দরকার নেই|পাঠিয়ো না|কল দিও না|no|nope|nah|cancel|stop|abort|don't|dont)$/i;
+      const confirmRe=/^(?:হ্যাঁ|হ্যা|হু|জি|জ্বি|করো|দাও|পাঠাও|পাঠিয়ে দাও|দিয়ে দাও|কল দাও|কল করো|ঠিক আছে|অবশ্যই|yes|yeah|yep|ok|okay|sure|confirm|send|send it|call|call now|do it|go ahead)$/i;
+
+      if(cancelRe.test(lowerClean)){
+        diagLog('AI_RES','COMM_CANCEL_LOCAL (0 chat calls)','ok');
+        cancelPendingAction(false);
+        return;
+      }
+
+      if(pa.stage==='confirm'){
+        if(confirmRe.test(lowerClean)){
+          diagLog('AI_RES','COMM_CONFIRM_LOCAL (0 chat calls)','ok');
+          await executePendingAction();
+          return;
+        }
+        const editMatch=clean.match(/^(?:(?:মেসেজ|ড্রাফট|লেখা)(?:টা)?\s*)?(?:বদলাও|পরিবর্তন\s*করো|লিখো|change(?:\s+it)?(?:\s+to)?|edit(?:\s+to)?)\s*[:\-]?\s*(.+)$/i);
+        if(editMatch&&(pa.kind==='sms'||pa.kind==='whatsapp')){
+          pa.draft=editMatch[1].trim();
+          renderActionCard();
+          const q=promptQuestionForPending(pa);
+          $('#sub').textContent=q;
+          diagLog('AI_RES','COMM_EDIT_LOCAL (0 chat calls)','ok');
+          S.busy=true;
+          clearSilenceTimer();
+          pauseRecognition();
+          setState('speaking','Speaking · সংশোধিত খসড়া…');
+          await speak(q);
+          S.busy=false;
+          if(S.activated){S.inConv=true;startListeningLoop()}else{setState('off','নিশ্চিত করতে "হ্যাঁ" বলুন')}
+          return;
+        }
+      }
+
+      if(pa.stage==='disambiguate'&&Array.isArray(pa.matches)&&pa.matches.length>1){
+        let picked=null;
+        if(/^(?:১|১ম|প্রথম|first|1|1st|one)$/i.test(lowerClean))picked=pa.matches[0];
+        else if(/^(?:২|২য়|দ্বিতীয়|second|2|2nd|two)$/i.test(lowerClean))picked=pa.matches[1];
+        else if(/^(?:৩|৩য়|তৃতীয়|third|3|3rd|three)$/i.test(lowerClean)&&pa.matches[2])picked=pa.matches[2];
+        else{
+          const subMatches=matchContactsLoosely(pa.matches,clean);
+          if(subMatches.length===1)picked=subMatches[0];
+        }
+        if(picked){
+          diagLog('AI_RES','COMM_DISAMBIGUATE_LOCAL -> '+picked.name+' (0 chat calls)','ok');
+          openQuickConfirmAction(pa.kind,picked,pa.draft||'');
+          return;
+        }
+      }
+
+      if(pa.stage==='need_number'){
+        const ascii=clean.replace(/[০-৯]/g,d=>String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+        const numMatch=ascii.match(/(?:\+?88[\s-]?)?0?1[3-9](?:[\s-]?\d){8}|\+?\d(?:[\s-]?\d){6,14}/);
+        if(numMatch){
+          const normPhone=normalizeBangladeshPhone(numMatch[0]);
+          if(normPhone&&normPhone.length>=6){
+            const saved=upsertContactLocal(pa.contactQuery||'নতুন কন্টাক্ট',normPhone,'');
+            if(saved){
+              diagLog('AI_RES','COMM_SAVE_NUMBER_LOCAL -> '+saved.phone+' (0 chat calls)','ok');
+              openQuickConfirmAction(pa.kind,saved,pa.draft||'');
+              return;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 1. Local Time & Day/Night Handler (0 Gemini chat requests)
+  const localTimeAns=TimeService.answerQueryLocally(clean);
+  if(localTimeAns.handled){
+    const snap=localTimeAns.snapshot;
+    diagLog('AI_RES','TIME_LOCAL ('+localTimeAns.queryType+'): '+snap.formatted12hEn+' / '+snap.periodBn+' (0 chat calls)','ok');
+    S.busy=true;
+    clearSilenceTimer();
+    pauseRecognition();
+    S.hist.push({role:'user',parts:[{text:clean}]});
+    S.hist.push({role:'model',parts:[{text:localTimeAns.reply}]});
+    S.hist=S.hist.slice(-24);
+    ls.set('zh',JSON.stringify(S.hist));
+    $('#sub').textContent=localTimeAns.reply;
+    setState('speaking','Speaking · চিন্টু সময় বলছে…');
+    updateBrainCard();
+    await speak(localTimeAns.reply);
+    S.busy=false;
+    if(S.activated){S.inConv=true;startListeningLoop()}else{setState('off','প্রস্তুত — আবার কথা বলতে Activate Chintu চাপুন বা লিখুন')}
+    return;
+  }
+
+  // 2. Local Daily Report Handler (0 Gemini chat requests)
+  if(/^(?:(?:hey|hi|hello|চিন্টু|হে\s*চিন্টু)[\s,!]*)?(?:(?:আজকের|আমার)\s*(?:দৈনিক\s*)?(?:রিপোর্ট|হিসাব|সারসংক্ষেপ)\s*(?:দাও|বলো|দেখাও)|(?:give|show)\s*(?:me\s*)?(?:today'?s\s*)?(?:daily\s*)?report|daily\s*report)[?!.\s]*$/i.test(clean)){
+    const enMode=!/[\u0980-\u09FF]/.test(clean)&&!/\b(?:ajker|hisab|dao|bolo)\b/i.test(clean);
+    const summary=buildLocalDailyReport(enMode);
+    diagLog('AI_RES','REPORT_LOCAL (0 chat calls)','ok');
+    S.busy=true;
+    clearSilenceTimer();
+    pauseRecognition();
+    S.hist.push({role:'user',parts:[{text:clean}]});
+    S.hist.push({role:'model',parts:[{text:summary}]});
+    S.hist=S.hist.slice(-24);
+    ls.set('zh',JSON.stringify(S.hist));
+    $('#sub').textContent=summary;
+    setState('speaking','Speaking · দৈনিক রিপোর্ট…');
+    updateBrainCard();
+    await speak(summary);
+    S.busy=false;
+    if(S.activated){S.inConv=true;startListeningLoop()}else{setState('off','প্রস্তুত — আবার কথা বলতে Activate Chintu চাপুন বা লিখুন')}
+    return;
+  }
+
+  // 3. Local Task List Query Handler (0 Gemini chat requests)
+  if(/^(?:(?:hey|hi|hello|চিন্টু|হে\s*চিন্টু)[\s,!]*)?(?:(?:আজকের|আমার)\s*(?:কী\s*কী\s*)?(?:কাজ|টাস্ক)(?:গুলো)?\s*(?:কী\s*কী|বলো|দেখাও|আছে)|কাজের\s*তালিকা\s*(?:দেখাও|বলো)|(?:what\s+are\s+my|show\s+my|list\s+my|pending)\s*tasks?)[?!.\s]*$/i.test(clean)){
+    const enMode=!/[\u0980-\u09FF]/.test(clean);
+    const pending=S.tasks.filter(t=>!t.done).map(t=>t.text);
+    const done=S.tasks.filter(t=>t.done).map(t=>t.text);
+    let reply='';
+    if(S.tasks.length===0){
+      reply=enMode?'You have no tasks on your list today, Sir.':'আজকের তালিকায় কোনো কাজ এখনো নেই, স্যার।';
+    }else if(pending.length===0){
+      reply=enMode?('All '+done.length+' tasks are completed today, Sir!'):('দারুণ স্যার! আজকের সবগুলো ('+done.length+'টি) কাজ সম্পন্ন হয়েছে।');
+    }else{
+      const sample=pending.slice(0,4).join(', ');
+      reply=enMode
+        ?('You have '+pending.length+' pending task'+(pending.length===1?'':'s')+', Sir: '+sample+(pending.length>4?' and more.':'.'))
+        :('স্যার, আজ '+pending.length+'টি কাজ বাকি আছে: '+sample+(pending.length>4?' এবং আরও কিছু।':'।'));
+    }
+    diagLog('AI_RES','TASKS_LOCAL (0 chat calls)','ok');
+    S.busy=true;
+    clearSilenceTimer();
+    pauseRecognition();
+    S.hist.push({role:'user',parts:[{text:clean}]});
+    S.hist.push({role:'model',parts:[{text:reply}]});
+    S.hist=S.hist.slice(-24);
+    ls.set('zh',JSON.stringify(S.hist));
+    $('#sub').textContent=reply;
+    setState('speaking','Speaking · কাজের তালিকা…');
+    updateBrainCard();
+    await speak(reply);
+    S.busy=false;
+    if(S.activated){S.inConv=true;startListeningLoop()}else{setState('off','প্রস্তুত — আবার কথা বলতে Activate Chintu চাপুন বা লিখুন')}
+    return;
+  }
+
+  // 4. Local Open-Meteo Weather Handler (0 Gemini chat requests)
+  if(/^(?:(?:hey|hi|hello|চিন্টু|হে\s*চিন্টু)[\s,!]*)?(?:(?:আজকের|এখনকার)?\s*(?:আবহাওয়া|ওয়েদার)\s*(?:কেমন|কী\s*অবস্থা|বলো|দেখাও)?|(?:বৃষ্টি\s*(?:হবে|আসবে)\s*কি)?|abohawa\s*(?:kemon|bolo)?|(?:what(?:'s|\s+is)\s+the\s+|how(?:'s|\s+is)\s+the\s+|check\s+)?weather(?:\s+(?:today|now))?)[?!.\s]*$/i.test(clean)){
+    const enMode=!/[\u0980-\u09FF]/.test(clean)&&!/\b(?:abohawa|kemon|bolo)\b/i.test(clean);
+    S.busy=true;
+    clearSilenceTimer();
+    pauseRecognition();
+    await loadWeather(S.city,false);
+    let reply='';
+    if(S.weather){
+      const w=S.weather;
+      reply=enMode
+        ?('In '+w.city+', it is currently '+w.temperature+'°C ('+w.conditionBn+') with '+w.humidity+'% humidity, Sir.')
+        :(w.city+'-তে এখন তাপমাত্রা '+w.temperature+' ডিগ্রি সেলসিয়াস এবং '+w.conditionBn+', স্যার।');
+    }else{
+      reply=enMode?'Could not load weather right now, Sir.':'এই মুহূর্তে আবহাওয়ার তথ্য লোড করা যাচ্ছে না, স্যার।';
+    }
+    diagLog('AI_RES','WEATHER_LOCAL (0 chat calls)','ok');
+    S.hist.push({role:'user',parts:[{text:clean}]});
+    S.hist.push({role:'model',parts:[{text:reply}]});
+    S.hist=S.hist.slice(-24);
+    ls.set('zh',JSON.stringify(S.hist));
+    $('#sub').textContent=reply;
+    setState('speaking','Speaking · আবহাওয়ার খবর…');
+    updateBrainCard();
+    await speak(reply);
+    S.busy=false;
+    if(S.activated){S.inConv=true;startListeningLoop()}else{setState('off','প্রস্তুত — আবার কথা বলতে Activate Chintu চাপুন বা লিখুন')}
+    return;
+  }
+
+  if(!navigator.onLine){
+    diagLog('AI_REQ','Blocked: browser offline','err');
+    setState(S.activated?(S.inConv?'listening':'standby'):'off','ইন্টারনেট সংযোগ নেই। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।',true);
+    if(S.activated)scheduleRestart(1800);
+    return;
+  }
+
+  S.busy=true;
+  clearSilenceTimer();
+  pauseRecognition();
+  setState('thinking','Thinking · চিন্টু ভাবছে…');
+  S.hist.push({role:'user',parts:[{text:clean}]});
+  S.hist=S.hist.slice(-24);
+  updateBrainCard();
+  diagLog('AI_REQ','POST /api/chat ('+clean+')');
+
+  const ctrl=new AbortController();
+  const timer=setTimeout(()=>ctrl.abort(),TIMEOUTS.aiResponseTimeoutMs);
+
+  const run=(async ()=>{
+    try{
+      const freshTime=TimeService.getSnapshot();
+      const timeZone=freshTime.timeZone;
+      // PRIVACY: Only pass contact id, name & nicknames — NEVER pass phone numbers to Gemini
+      const safeContacts=S.contacts.map(c=>({
+        id:String(c.id||''),
+        name:String(c.name||''),
+        nicknames:String(c.nicknames||'')
+      }));
+      const context={
+        city:S.city,
+        tasks:S.tasks,
+        reminders:S.reminders,
+        facts:S.facts,
+        contacts:safeContacts,
+        activity:S.activity,
+        commStats:todayCommCounts(),
+        activeReminderText:S.lastFiredReminder?S.lastFiredReminder.text:undefined,
+        localNowIso:freshTime.localIsoWithOffset,
+        timeZone,
+        clientTime:freshTime
+      };
+      const r=await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          model:S.models[0]||DEFAULT_MODELS[0],
+          models:S.models,
+          history:S.hist,
+          timeZone,
+          clientTime:freshTime,
+          context
+        }),
+        signal:ctrl.signal
+      });
+      const raw=await r.text();
+      let j={};
+      try{j=raw?JSON.parse(raw):{}}catch(parseErr){}
+      if(typeof j.apiCallsMade==='number'&&j.apiCallsMade>0){
+        addRequestCount('chat',j.apiCallsMade);
+      }
+      if(!r.ok){
+        throw new Error(j.error||('সার্ভার ত্রুটি (HTTP '+r.status+')'));
+      }
+
+      const out=(j.text||'').trim();
+      if(!out)throw new Error('AI থেকে খালি উত্তর এসেছে। আবার চেষ্টা করুন।');
+
+      if(j.actions)applyServerActions(j.actions);
+      if(j.weather){
+        S.weather=j.weather;
+        ls.set('zw_cache',JSON.stringify({city:(S.city||'Dhaka').toLowerCase(),data:j.weather,ts:Date.now()}));
+        renderWeather(j.weather);
+      }
+      if(j.report){
+        S.report=j.report;
+        renderReportCard();
+      }
+
+      diagLog('AI_RES','model='+(j.modelUsed||S.models[0])+', calls='+(j.apiCallsMade||1)+', chars='+out.length,'ok');
+      S.hist.push({role:'model',parts:[{text:out}]});
+      ls.set('zh',JSON.stringify(S.hist));
+      $('#sub').textContent=out;
+      setState('speaking','Speaking · চিন্টু বলছে…');
+      updateBrainCard(j.modelUsed||S.models[0]);
+      await speak(out);
+
+      S.busy=false;
+      if(S.activated){
+        S.inConv=true;
+        startListeningLoop();
+      }else{
+        setState('off','প্রস্তুত — আবার কথা বলতে Activate Chintu চাপুন বা লিখুন');
+      }
+    }catch(e){
+      S.hist.pop();
+      S.busy=false;
+      let msg='অজানা ত্রুটি হয়েছে।';
+      if(e&&e.name==='AbortError'){
+        msg='AI উত্তর আসতে নেটওয়ার্ক সময়সীমা ('+Math.round(TIMEOUTS.aiResponseTimeoutMs/1000)+' সেকেন্ড) শেষ হয়েছে। আবার চেষ্টা করুন।';
+        diagLog('TIMEOUT_RECOVERY',msg,'err');
+      }else if(!navigator.onLine||(e&&/Failed to fetch|NetworkError|Load failed/i.test(e.message||''))){
+        msg='ইন্টারনেট বা সার্ভারের সাথে সংযোগ বিচ্ছিন্ন হয়েছে। সংযোগ দেখুন।';
+        diagLog('SR_ERROR',msg,'err');
+      }else if(e&&e.message){
+        msg=e.message;
+        diagLog('AI_RES','Error: '+msg,'err');
+      }
+      $('#sub').textContent='ত্রুটি: '+msg;
+      setState(S.activated?(S.inConv?'listening':'standby'):'off','ত্রুটি: '+msg,true);
+      if(S.activated)scheduleRestart(1400);
+    }finally{
+      clearTimeout(timer);
+      activeAskPromise=null;
+      updateBrainCard();
+    }
+  })();
+
+  activeAskPromise=run;
+  await run;
+}
+
+/* Activation & Morning/Evening Daily Routines (Local Text Only — Zero Gemini Calls) */
+async function triggerDailyRoutineOnActivation(){
+  const snap=TimeService.getSnapshot();
+  const hour=snap.hour24;
+  const today=todayKey();
+
+  // First activation each morning (05:00 - 11:59)
+  if(hour>=5&&hour<12&&ls.get('z_morn')!==today){
+    ls.set('z_morn',today);
+    S.inConv=true;
+    S.busy=true;
+    pauseRecognition();
+    const greet='শুভ সকাল, স্যার! '+snap.spokenTimeBn+'। আজকে আপনার কী কী পরিকল্পনা আছে? বলুন, আমি কাজের তালিকায় লিখে রাখছি।';
+    $('#sub').textContent=greet;
+    S.hist.push({role:'model',parts:[{text:greet}]});
+    ls.set('zh',JSON.stringify(S.hist));
+    setState('speaking','Speaking · সকালের শুভেচ্ছা…');
+    await speak(greet);
+    S.busy=false;
+    if(S.activated)startListeningLoop();
+    return true;
+  }
+
+  // First activation after 9 PM (21:00+) — computed locally without calling Gemini
+  if(hour>=21&&ls.get('z_eve')!==today){
+    ls.set('z_eve',today);
+    const doneTasks=S.tasks.filter(t=>t.done).map(t=>t.text);
+    const pendingTasks=S.tasks.filter(t=>!t.done).map(t=>t.text);
+    const upcomingReminders=S.reminders.filter(r=>!r.done).map(r=>({text:r.text,dueAt:r.dueAt}));
+    const care=pendingTasks.length===0
+      ?'আজ সব কাজ শেষ করেছেন, স্যার—এবার নিশ্চিন্তে বিশ্রাম নিন।'
+      :'বাকি কাজগুলো কালকের জন্য গুছিয়ে রেখে এখন একটু বিশ্রাম নিন, স্যার।';
+    const summary='শুভ সন্ধ্যা, স্যার। '+snap.spokenTimeBn+'। আজ '+doneTasks.length+'টি কাজ সম্পন্ন হয়েছে, '+pendingTasks.length+'টি কাজ বাকি আছে এবং '+upcomingReminders.length+'টি রিমাইন্ডার আছে। '+care;
+
+    S.report={
+      doneCount:doneTasks.length,
+      pendingCount:pendingTasks.length,
+      doneTasks,
+      pendingTasks,
+      upcomingReminders,
+      summaryText:summary,
+      generatedAt:Date.now()
+    };
+    renderReportCard();
+    logActivity('সন্ধ্যার দৈনিক রিপোর্ট (লোকাল)');
+
+    S.inConv=true;
+    S.busy=true;
+    pauseRecognition();
+    $('#sub').textContent=summary;
+    S.hist.push({role:'model',parts:[{text:summary}]});
+    ls.set('zh',JSON.stringify(S.hist));
+    setState('speaking','Speaking · সন্ধ্যার রিপোর্ট…');
+    await speak(summary);
+    S.busy=false;
+    if(S.activated)startListeningLoop();
+    return true;
+  }
+
+  return false;
+}
+
+$('#mic').onclick=async ()=>{
+  if(S.activated){
+    S.activated=false;
+    S.inConv=false;
+    S.busy=false;
+    clearSilenceTimer();
+    pauseRecognition();
+    stopSpeaking();
+    diagLog('MIC_INIT','Voice assistant stopped by user');
+    setState('off','অপেক্ষায় — Activate Chintu চাপুন অথবা নিচে লিখুন');
+  }else{
+    S.activated=true;
+    S.inConv=true;
+    diagLog('MIC_INIT','Activate Chintu pressed by user');
+    requestNotifPermission();
+    try{speechSynthesis.getVoices()}catch(e){}
+    updateBrainCard();
+    const handled=await triggerDailyRoutineOnActivation();
+    if(!handled&&S.activated){
+      startListeningLoop();
+    }
+  }
+};
+
+function submitTextInput(){
+  const inp=$('#txt');
+  const t=inp.value.trim();
+  if(!t)return;
+  inp.value='';
+  if(S.activated)S.inConv=true;
+  ask(t);
+}
+$('#txt').addEventListener('keydown',e=>{if(e.key==='Enter')submitTextInput()});
+$('#send-btn').addEventListener('click',submitTextInput);
+
+/* Settings: Reorderable Model List & Auto Warning */
+let draftModels=[];
+
+function updateLangWarning(){
+  const v=$('#l').value;
+  const el=$('#lang-warn');
+  if(v==='auto'){
+    el.className='lang-warn';
+    el.textContent='সতর্কতা: Auto মোডে ভয়েস ট্রান্সক্রিপশন ও উত্তর—দুটির জন্য প্রতি বার্তায় দ্বিগুণ Gemini অনুরোধ (double requests) খরচ হবে। ফ্রি কোটা বাঁচাতে বাংলা বা English বেছে নিন।';
+  }else{
+    el.className='lang-note';
+    el.textContent='ফ্রি ব্রাউজার SpeechRecognition চালু আছে — কণ্ঠস্বর চিনতে কোনো Gemini কোটা খরচ হয় না।';
+  }
+}
+
+function renderDraftModels(){
+  const ul=$('#model-list');
+  ul.innerHTML='';
+  draftModels.forEach((m,idx)=>{
+    const li=document.createElement('li');
+    li.className='model-item';
+    const rank=document.createElement('span');
+    rank.className='model-rank';
+    rank.textContent=(idx+1)+'.';
+    const name=document.createElement('span');
+    name.className='model-name';
+    name.textContent=m;
+    const btns=document.createElement('div');
+    btns.className='model-btns';
+
+    const up=document.createElement('button');
+    up.type='button';
+    up.textContent='↑';
+    up.setAttribute('aria-label','উপরে নিন');
+    up.disabled=idx===0;
+    up.onclick=()=>{
+      if(idx<=0)return;
+      const tmp=draftModels[idx-1];
+      draftModels[idx-1]=draftModels[idx];
+      draftModels[idx]=tmp;
+      renderDraftModels();
+    };
+
+    const down=document.createElement('button');
+    down.type='button';
+    down.textContent='↓';
+    down.setAttribute('aria-label','নিচে নিন');
+    down.disabled=idx===draftModels.length-1;
+    down.onclick=()=>{
+      if(idx>=draftModels.length-1)return;
+      const tmp=draftModels[idx+1];
+      draftModels[idx+1]=draftModels[idx];
+      draftModels[idx]=tmp;
+      renderDraftModels();
+    };
+
+    const rm=document.createElement('button');
+    rm.type='button';
+    rm.textContent='✕';
+    rm.setAttribute('aria-label','বাদ দিন');
+    rm.disabled=draftModels.length<=1;
+    rm.onclick=()=>{
+      if(draftModels.length<=1)return;
+      draftModels.splice(idx,1);
+      renderDraftModels();
+    };
+
+    btns.append(up,down,rm);
+    li.append(rank,name,btns);
+    ul.appendChild(li);
+  });
+}
+
+$('#add-model-btn').onclick=()=>{
+  const inp=$('#new-model');
+  const val=inp.value.trim().replace(/^models\//,'');
+  if(!val||!/^[a-zA-Z0-9._-]{1,80}$/.test(val))return;
+  if(DEPRECATED_MODELS.has(val))return;
+  if(!draftModels.includes(val)){
+    draftModels.push(val);
+    renderDraftModels();
+  }
+  inp.value='';
+};
+$('#reset-models-btn').onclick=()=>{
+  draftModels=[...DEFAULT_MODELS];
+  renderDraftModels();
+};
+$('#l').addEventListener('change',updateLangWarning);
+
+/* Settings & Quick Actions */
+$('#gear').onclick=()=>{
+  $('#city').value=S.city;
+  draftModels=[...S.models];
+  renderDraftModels();
+  $('#l').value=S.lang;
+  $('#tts-mode').value=S.ttsMode;
+  $('#quota-limit').value=String(S.dailyQuota);
+  updateLangWarning();
+  $('#dlg').showModal();
+};
+$('#sv').onclick=()=>{
+  const newCity=$('#city').value.trim()||'Dhaka';
+  const cityChanged=newCity!==S.city;
+  S.city=newCity;
+  S.models=draftModels.length>0?[...draftModels]:[...DEFAULT_MODELS];
+  S.lang=$('#l').value;
+  S.ttsMode=$('#tts-mode').value||'gemini';
+  const qVal=Number($('#quota-limit').value);
+  S.dailyQuota=Number.isFinite(qVal)&&qVal>=10&&qVal<=5000?Math.round(qVal):DEFAULT_DAILY_QUOTA;
+  S.quotaAlertMsg='';
+  S.reqStats.warned80=false;
+  ls.set('zc',S.city);
+  ls.set('zm_list',JSON.stringify(S.models));
+  ls.set('zl',S.lang);
+  ls.set('z_tts',S.ttsMode);
+  ls.set('z_quota',String(S.dailyQuota));
+  ls.set('z_req_v2',JSON.stringify(S.reqStats));
+  maybeTriggerQuota80(false);
+  $('#dlg').close();
+  updateBrainCard();
+  if(cityChanged)loadWeather(S.city,false);
+  if(S.activated&&!S.busy){
+    startListeningLoop();
+  }else{
+    setState(document.body.dataset.s||'off','সেটিংস সংরক্ষিত হয়েছে');
+  }
+};
+function clearMemory(){
+  S.hist=[];
+  ls.set('zh','[]');
+  updateBrainCard();
+  $('#sub').textContent='কথোপকথনের ইতিহাস মুছে ফেলা হয়েছে স্যার। আপনার সংরক্ষিত তথ্য স্মৃতি কার্ডে সুরক্ষিত আছে।';
+  setState(document.body.dataset.s||'off','কথোপকথন মুছে গেছে');
+}
+$('#clr').onclick=clearMemory;
+$('#quick-clear').onclick=clearMemory;
+$('#open-logs').onclick=()=>{
+  renderDiagLogs();
+  $('#log-dlg').showModal();
+};
+$('#close-logs').onclick=()=>$('#log-dlg').close();
+$('#clear-logs').onclick=()=>{diagLogs.length=0;renderDiagLogs()};
+$('#copy-logs').onclick=()=>{
+  const txt=diagLogs.map(x=>`[${x.ts}] [${x.event}] ${x.detail}`).join('\n');
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(()=>{
+      $('#diag-summary').textContent='লগ ক্লিপবোর্ডে কপি হয়েছে!';
+    }).catch(()=>{});
+  }
+};
+$('#quick-lang').onclick=()=>{
+  // Quick toggle switches between free browser bn-BD and en-US
+  S.lang=S.lang==='bn-BD'?'en-US':'bn-BD';
+  ls.set('zl',S.lang);
+  updateBrainCard();
+  if(S.activated&&!S.busy)startListeningLoop();
+};
+
+/* Network Status Listeners */
+window.addEventListener('offline',()=>{
+  diagLog('SR_ERROR','Network went offline','err');
+  setState(document.body.dataset.s||'off','ইন্টারনেট সংযোগ বিচ্ছিন্ন হয়েছে। সংযোগ পরীক্ষা করুন।',true);
+});
+window.addEventListener('online',()=>{
+  diagLog('TIMEOUT_RECOVERY','Network connection restored','ok');
+  loadWeather(S.city,false);
+  if(S.activated&&!S.busy)startListeningLoop();
+  else setState(document.body.dataset.s||'off','ইন্টারনেট সংযোগ ফিরে এসেছে।');
+});
+</script>
+</body>
+</html>

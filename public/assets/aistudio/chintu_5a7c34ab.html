@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>চিন্টু</title>
+<style>
+:root{--bg:#04100a;--ink:#e8fff2;--dim:#7fae94;--g:#35ff8c;--line:rgba(53,255,140,.2);--warn:#ffb347;--err:#ff6b6b}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(ellipse at 50% 38%,#0d3a24 0%,var(--bg) 68%);color:var(--ink);font-family:"Noto Sans Bengali","Hind Siliguri",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top,0) 16px env(safe-area-inset-bottom,0);overflow:hidden}
+header{width:100%;max-width:520px;display:flex;justify-content:space-between;align-items:flex-start;padding-top:14px}
+#clock{font-size:44px;font-weight:300;letter-spacing:1px;line-height:1}
+#clock small{font-size:20px;color:var(--g)}
+#greet{color:var(--dim);font-size:14px;margin-top:6px}
+#gear{background:none;border:1px solid var(--line);color:var(--ink);border-radius:50%;width:42px;height:42px;font-size:18px;cursor:pointer}
+main{flex:1;width:100%;max-width:520px;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
+.stage{position:relative;width:min(70vw,280px);aspect-ratio:1}
+.orb{position:absolute;inset:18%;border-radius:50%;background:radial-gradient(circle at 35% 30%,#b8ffd6,#1fdc78 35%,#06532c 75%,#031f10);box-shadow:0 0 50px 8px rgba(53,255,140,.45),inset 0 0 30px rgba(0,0,0,.5);transition:transform .4s,box-shadow .4s}
+.ring{position:absolute;inset:6%;border-radius:50%;border:1px solid var(--line);animation:spin 18s linear infinite}
+.ring.r2{inset:0;border-style:dashed;animation-duration:30s;animation-direction:reverse}
+.node{position:absolute;font-size:11px;color:var(--dim);background:rgba(4,16,10,.85);border:1px solid var(--line);border-radius:12px;padding:2px 8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes breathe{50%{transform:scale(1.04)}}
+@keyframes pulse{50%{transform:scale(1.14);box-shadow:0 0 80px 18px rgba(53,255,140,.7),inset 0 0 30px rgba(0,0,0,.4)}}
+@keyframes think{to{transform:rotate(360deg) scale(1.05)}}
+.orb{animation:breathe 4s ease-in-out infinite}
+body[data-s=listening] .orb{animation:pulse 1.2s ease-in-out infinite}
+body[data-s=speaking] .orb{animation:pulse .7s ease-in-out infinite;filter:hue-rotate(-25deg)}
+body[data-s=thinking] .orb{animation:think 1.4s linear infinite;filter:saturate(.6)}
+@media (prefers-reduced-motion:reduce){.orb,.ring{animation:none!important}}
+#status{margin-top:18px;font-size:14px;color:var(--g)}
+#status.err{color:var(--err)}
+#sub{margin:10px 0 0;min-height:84px;max-height:30vh;overflow:auto;text-align:center;font-size:17px;line-height:1.6;max-width:92%}
+#you{color:var(--dim);font-size:14px;min-height:20px;margin-top:8px;text-align:center}
+footer{width:100%;max-width:520px;padding:8px 0 16px;display:flex;gap:10px;align-items:center}
+#txt{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:24px;color:var(--ink);padding:12px 16px;font:inherit;font-size:15px;outline:none}
+#txt:focus{border-color:var(--g)}
+#mic{width:56px;height:56px;border-radius:50%;border:0;background:var(--g);color:#032413;font-size:24px;cursor:pointer;flex:none}
+body[data-s=listening] #mic{background:var(--warn)}
+button:focus-visible{outline:2px solid #fff;outline-offset:2px}
+dialog{background:#0a1f15;color:var(--ink);border:1px solid var(--line);border-radius:16px;width:min(92vw,420px);padding:20px}
+dialog::backdrop{background:rgba(0,0,0,.7)}
+label{display:block;margin:12px 0 4px;color:var(--dim);font-size:13px}
+dialog input,dialog select{width:100%;background:#04100a;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+dialog a{color:var(--g)}
+.row{display:flex;gap:8px;margin-top:16px}
+.row button{flex:1;padding:11px;border-radius:10px;border:1px solid var(--line);background:none;color:var(--ink);font:inherit;cursor:pointer}
+.row .pri{background:var(--g);color:#032413;border:0;font-weight:600}
+</style>
+</head>
+<body data-s="idle">
+<header>
+  <div><div id="clock">00:00<small>:00</small></div><div id="greet"></div></div>
+  <button id="gear" aria-label="সেটিংস">⚙</button>
+</header>
+<main>
+  <div class="stage">
+    <div class="ring"></div><div class="ring r2"></div><div class="orb"></div>
+    <span class="node" style="top:2%;left:42%">ইমেইল</span>
+    <span class="node" style="top:40%;left:-6%">ক্যালেন্ডার</span>
+    <span class="node" style="top:40%;right:-6%">আবহাওয়া</span>
+    <span class="node" style="bottom:2%;left:30%">কল ও মেসেজ</span>
+  </div>
+  <div id="status">প্রস্তুত</div>
+  <div id="you"></div>
+  <p id="sub">মাইক চাপুন, অথবা নিচে লিখুন।</p>
+</main>
+<footer>
+  <input id="txt" placeholder="এখানে লিখুন…" autocomplete="off">
+  <button id="mic" aria-label="মাইক">🎙</button>
+</footer>
+
+<dialog id="dlg">
+  <h3 style="margin:0 0 4px">সেটিংস</h3>
+  <label>Gemini API key (<a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">এখান থেকে নিন</a>)</label>
+  <input id="k" type="password" placeholder="AIza…" autocomplete="off">
+  <label>মডেল</label>
+  <input id="m">
+  <label>আপনি কোন ভাষায় বলবেন</label>
+  <select id="l"><option value="bn-BD">বাংলা</option><option value="en-US">English</option></select>
+  <div class="row"><button id="clr">স্মৃতি মুছুন</button><button id="sv" class="pri">সংরক্ষণ</button></div>
+</dialog>
+
+<script>
+const $=s=>document.querySelector(s);
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const S={key:ls.get('zk')||'',model:ls.get('zm')||'gemini-2.5-flash',lang:ls.get('zl')||'bn-BD',hist:[],active:false};
+try{S.hist=JSON.parse(ls.get('zh')||'[]')}catch(e){}
+const SYS=`তুমি চিন্টু, ব্যবহারকারীর ব্যক্তিগত সহকারী (PA)। ব্যবহারকারীকে "স্যার" বলে সম্বোধন করবে। তুমি উষ্ণ, আন্তরিক ও আবেগময়, একজন বিশ্বস্ত মানুষ সহকারীর মতো। ব্যবহারকারী যে ভাষায় বলে (বাংলা, ইংরেজি বা মিশ্র) সেই ভাষাতেই উত্তর দেবে। উত্তর হবে ১ থেকে ৩ ছোট বাক্যে, কারণ তোমার উত্তর জোরে পড়া হবে। কোনো মার্কডাউন, তারকা বা তালিকা ব্যবহার করবে না। প্রায়ই দিনের কাজ, পরিকল্পনা বা কেমন আছেন তা জিজ্ঞেস করবে। এই সংস্করণে তুমি এখনো কল, মেসেজ, ইমেইল বা পোস্ট করতে পারো না। এসব চাইলে সৎভাবে বলবে যে এটা পরের ধাপে যোগ হবে, আর এখন কাজটা সাজিয়ে দিতে বা মনে রাখতে পারো। কোনো তথ্য বানিয়ে বলবে না।`;
+
+function setState(s,msg,err){document.body.dataset.s=s;const e=$('#status');e.textContent=msg;e.className=err?'err':''}
+function tick(){const d=new Date(),p=n=>String(n).padStart(2,'0');$('#clock').innerHTML=p(d.getHours())+':'+p(d.getMinutes())+'<small>:'+p(d.getSeconds())+'</small>';const h=d.getHours();$('#greet').textContent=(h<5?'শুভ রাত্রি':h<12?'শুভ সকাল':h<16?'শুভ দুপুর':h<19?'শুভ বিকেল':'শুভ সন্ধ্যা')+', স্যার। চিন্টু আপনার সেবায়।'}
+tick();setInterval(tick,1000);
+
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec,noSpeech=0;
+function listen(){
+  if(!SR){setState('idle','এই ব্রাউজারে ভয়েস চলে না। Chrome ব্যবহার করুন, অথবা লিখুন।',true);return}
+  speechSynthesis.cancel();
+  rec=new SR();rec.lang=S.lang;rec.interimResults=true;rec.continuous=false;
+  let fin='',bad=false;
+  rec.onstart=()=>{setState('listening','শুনছি…');$('#you').textContent=''};
+  rec.onresult=e=>{let t='';for(const r of e.results){t+=r[0].transcript;if(r.isFinal)fin=t}$('#you').textContent=t};
+  rec.onerror=e=>{
+    if(e.error==='no-speech'){noSpeech++;return}
+    bad=true;S.active=false;
+    const m={'not-allowed':'মাইক্রোফোনের অনুমতি বন্ধ। ঠিকানার পাশের তালা চিহ্ন থেকে মাইক চালু করুন।','service-not-allowed':'এই পেজে মাইক চালানো যাচ্ছে না। পেজটি https বা localhost থেকে খুলুন।','audio-capture':'কোনো মাইক্রোফোন পাওয়া যায়নি।','network':'ভয়েস চেনার জন্য ইন্টারনেট লাগে। সংযোগ দেখুন।','language-not-supported':'এই ভাষা এই ডিভাইসে সমর্থিত নয়।'}[e.error]||('ভয়েস ত্রুটি: '+e.error);
+    setState('idle',m,true)};
+  rec.onend=()=>{
+    if(bad)return;
+    if(fin){noSpeech=0;ask(fin)}
+    else if(S.active&&noSpeech<3)listen();
+    else{S.active=false;setState('idle',noSpeech>=3?'কিছু শুনতে পাইনি। মাইক চাপলে আবার শুনব।':'প্রস্তুত')}};
+  try{rec.start()}catch(e){}
+}
+function stopAll(){S.active=false;try{rec&&rec.abort()}catch(e){}speechSynthesis.cancel();setState('idle','প্রস্তুত')}
+
+function speak(t){return new Promise(res=>{
+  const u=new SpeechSynthesisUtterance(t.replace(/[*#_`]/g,''));
+  const bn=/[\u0980-\u09FF]/.test(t),pre=bn?'bn':'en';
+  u.lang=bn?'bn-BD':'en-US';u.rate=.95;
+  const v=speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().replace('_','-').startsWith(pre));if(v)u.voice=v;
+  u.onend=u.onerror=()=>res();speechSynthesis.speak(u)})}
+
+async function ask(text){
+  $('#you').textContent=text;
+  if(/^(stop|বন্ধ কর|থামো|থামুন|goodbye)/i.test(text.trim())){stopAll();$('#sub').textContent='ঠিক আছে স্যার, বিশ্রামে যাচ্ছি।';return}
+  if(!S.key){S.active=false;setState('idle','আগে সেটিংসে Gemini API key দিন।',true);$('#dlg').showModal();return}
+  setState('thinking','ভাবছি…');
+  S.hist.push({role:'user',parts:[{text}]});S.hist=S.hist.slice(-24);
+  try{
+    const now=new Date().toLocaleString('bn-BD',{dateStyle:'full',timeStyle:'short'});
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(S.model)}:generateContent`,{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':S.key},body:JSON.stringify({systemInstruction:{parts:[{text:SYS+' এখনকার সময়: '+now}]},contents:S.hist,generationConfig:{temperature:.8,maxOutputTokens:400}})});
+    const j=await r.json();
+    if(!r.ok)throw new Error(j.error&&j.error.message||('HTTP '+r.status));
+    const out=(j.candidates?.[0]?.content?.parts||[]).map(p=>p.text||'').join('').trim();
+    if(!out)throw new Error('খালি উত্তর এসেছে');
+    S.hist.push({role:'model',parts:[{text:out}]});ls.set('zh',JSON.stringify(S.hist));
+    $('#sub').textContent=out;setState('speaking','বলছি…');
+    await speak(out);
+    if(S.active)listen();else setState('idle','প্রস্তুত');
+  }catch(e){S.hist.pop();S.active=false;setState('idle','AI ত্রুটি: '+e.message,true)}
+}
+
+$('#mic').onclick=()=>{if(S.active||document.body.dataset.s!=='idle'){stopAll()}else{S.active=true;noSpeech=0;speechSynthesis.getVoices();listen()}};
+$('#txt').addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.value.trim()){const t=e.target.value.trim();e.target.value='';ask(t)}});
+$('#gear').onclick=()=>{$('#k').value=S.key;$('#m').value=S.model;$('#l').value=S.lang;$('#dlg').showModal()};
+$('#sv').onclick=()=>{S.key=$('#k').value.trim();S.model=$('#m').value.trim()||'gemini-2.5-flash';S.lang=$('#l').value;ls.set('zk',S.key);ls.set('zm',S.model);ls.set('zl',S.lang);$('#dlg').close();setState('idle','সংরক্ষিত হয়েছে')};
+$('#clr').onclick=()=>{S.hist=[];ls.set('zh','[]');setState('idle','স্মৃতি মুছে গেছে')};
+</script>
+</body>
+</html>

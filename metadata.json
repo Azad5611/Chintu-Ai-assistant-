@@ -1,0 +1,6 @@
+{
+  "name": "চিন্টু",
+  "description": "চিন্টু — ব্যক্তিগত সহকারী (PA) ভয়েস ও টেক্সট অ্যাপ।",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
